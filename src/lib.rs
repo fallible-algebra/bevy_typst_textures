@@ -7,9 +7,11 @@ use bevy_app::{First, Plugin, Startup};
 use bevy_asset::{AssetServer, Assets, Handle, RenderAssetUsages};
 use bevy_ecs::{
     resource::Resource,
-    system::{Res, ResMut},
+    system::{Commands, Res, ResMut},
 };
 use bevy_image::Image;
+use serde::{Deserialize, Serialize};
+use serde_json::value::Serializer;
 use typst::{diag::Severity, foundations::Dict, layout::PagedDocument};
 use wgpu_types::{Extent3d, TextureDimension, TextureFormat};
 
@@ -32,7 +34,7 @@ impl Plugin for TypstTexturesPlugin {
 pub struct TypstJob {
     pub use_template: Handle<TypstZip>,
     pub data_in: Dict,
-    pub handle_target: Handle<bevy_image::Image>,
+    pub send_target: async_channel::Sender<bevy_image::Image>,
     pub target_dims: Option<(u32, u32)>,
     pub scale: f32,
 }
@@ -54,12 +56,13 @@ pub struct TypstTemplateServer {
 }
 
 impl TypstTemplateServer {
-    pub(crate) fn insert_to_world() {}
+    pub(crate) fn insert_to_world(mut commands: Commands, asset_server: Res<AssetServer>) {
+        commands.insert_resource(Self::new(asset_server.clone()));
+    }
 
     pub fn do_jobs(
         mut template_server: ResMut<TypstTemplateServer>,
         templates: Res<Assets<TypstZip>>,
-        mut images: ResMut<Assets<Image>>,
     ) {
         let max_jobs = template_server
             .jobs_per_frame
@@ -73,47 +76,44 @@ impl TypstTemplateServer {
                 && let Some(template) = templates.get(&job.use_template)
             {
                 let (engine, toml) = compiled_map
-                    .entry(job.use_template)
+                    .entry(job.use_template.clone())
                     .or_insert_with(|| template.0.clone().to_engine());
                 let compiled = engine.compile_with_input::<_, PagedDocument>(job.data_in);
+                let path = job.use_template.path();
                 let Ok(page) = compiled.output else {
                     bevy_log::error!(
                         "[TYPST FATAL ERROR for {:?}] {}",
-                        job.handle_target.path(),
+                        path,
                         compiled.output.unwrap_err()
                     );
                     continue;
                 };
                 for warning in compiled.warnings {
                     if warning.severity == Severity::Error {
-                        bevy_log::error!(
-                            "[TYPST ERROR for {:?}] {}",
-                            job.handle_target.path(),
-                            warning.message
-                        );
+                        bevy_log::error!("[TYPST ERROR for {:?}] {}", path, warning.message);
                     } else {
-                        bevy_log::warn!(
-                            "[TYPST WARNING for {:?}] {}",
-                            job.handle_target.path(),
-                            warning.message
-                        );
+                        bevy_log::warn!("[TYPST WARNING for {:?}] {}", path, warning.message);
                     }
                 }
                 let rendered = typst_render::render(&page.pages[0], job.scale);
-                images.insert(
-                    &job.handle_target,
-                    bevy_image::Image::new(
-                        Extent3d {
-                            width: rendered.width(),
-                            height: rendered.height(),
-                            depth_or_array_layers: 1,
-                        },
-                        TextureDimension::D2,
-                        rendered.data().to_vec(),
-                        TextureFormat::Rgba8UnormSrgb,
-                        RenderAssetUsages::RENDER_WORLD,
+                let result = job.send_target.try_send(bevy_image::Image::new(
+                    Extent3d {
+                        width: rendered.width(),
+                        height: rendered.height(),
+                        depth_or_array_layers: 1,
+                    },
+                    TextureDimension::D2,
+                    rendered.data().to_vec(),
+                    TextureFormat::Rgba8UnormSrgb,
+                    RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
+                ));
+                match result {
+                    Ok(_) => {}
+                    Err(err) => bevy_log::error!(
+                        "[TYPST SEND IMAGE TO ASSET SERVER ERROR @ {path:?}] {err}"
                     ),
-                );
+                }
+                println!("WORKS LOL");
             } else {
                 template_server.jobs.push_back(job);
             }
@@ -133,7 +133,7 @@ impl TypstTemplateServer {
                 TextureDimension::D2,
                 vec![255, 0, 255, 255],
                 TextureFormat::Rgba8UnormSrgb,
-                RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+                RenderAssetUsages::MAIN_WORLD,
             ),
         )
     }
@@ -151,7 +151,7 @@ impl TypstTemplateServer {
     pub fn add_job(
         &mut self,
         zip: PathBuf,
-        data_in: Dict,
+        data_in: impl Serialize,
         target_dims: Option<(u32, u32)>,
         scale: f32,
     ) -> Handle<Image> {
@@ -160,12 +160,24 @@ impl TypstTemplateServer {
             .templates
             .entry(zip.clone())
             .or_insert_with(|| asset_server.load(zip));
-        let image = self.fallback.clone();
-        let handle = self.asset_server.add(image);
+        let (sender, reciever) = async_channel::bounded::<bevy_image::Image>(1);
+        let handle: Handle<Image> = self
+            .asset_server
+            .add_async(async move { reciever.recv().await });
+        let Ok(data_in): Result<serde_json::Value, _> = data_in.serialize(Serializer) else {
+            bevy_log::error!(
+                "[TYPST INPUT ERROR] Could not transform value into a serde json as interim for Dict."
+            );
+            return handle;
+        };
+        let Ok(data_in) = serde_json::from_value(data_in) else {
+            bevy_log::error!("[TYPST INPUT ERROR] Could not get Dict from interim serde json.");
+            return handle;
+        };
         self.jobs.push_back(TypstJob {
             use_template: template.clone(),
             data_in,
-            handle_target: handle.clone(),
+            send_target: sender,
             target_dims,
             scale,
         });

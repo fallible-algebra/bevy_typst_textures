@@ -1,14 +1,14 @@
 use std::io::Cursor;
 
 use bevy_app::{App, Plugin};
-use bevy_asset::{Asset, AssetApp, AssetLoader, AsyncReadExt};
+use bevy_asset::{Asset, AssetApp, AssetLoader};
 use bevy_reflect::TypePath;
 
-use crate::file_resolver::{FilePreloaderError, StaticResolverForBoth};
+use crate::file_resolver::{FilePreloaderError, StructuredInMemoryTemplate};
 
-pub struct RareEpistemeAssetsPlugin;
+pub struct TypstTextureAssetsPlugin;
 
-impl Plugin for RareEpistemeAssetsPlugin {
+impl Plugin for TypstTextureAssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<TypstZip>();
         app.init_asset_loader::<TypstZipLoader>();
@@ -41,7 +41,7 @@ impl std::fmt::Display for TypstAssetError {
 impl std::error::Error for TypstAssetError {}
 
 #[derive(Debug, Asset, TypePath)]
-pub struct TypstZip(pub StaticResolverForBoth);
+pub struct TypstZip(pub StructuredInMemoryTemplate);
 
 impl AssetLoader for TypstZipLoader {
     type Asset = TypstZip;
@@ -53,8 +53,8 @@ impl AssetLoader for TypstZipLoader {
     async fn load(
         &self,
         reader: &mut dyn bevy_asset::io::Reader,
-        settings: &Self::Settings,
-        load_context: &mut bevy_asset::LoadContext<'_>,
+        _settings: &Self::Settings,
+        _load_context: &mut bevy_asset::LoadContext<'_>,
     ) -> std::result::Result<Self::Asset, Self::Error> {
         let mut buffer: Vec<u8> = vec![];
         reader
@@ -63,7 +63,7 @@ impl AssetLoader for TypstZipLoader {
             .map_err(TypstAssetError::Io)?;
         let cursor = Cursor::new(buffer);
         let zip = zip::ZipArchive::new(cursor).map_err(TypstAssetError::Zip)?;
-        let resolver = StaticResolverForBoth::from_zip(zip)?;
+        let resolver = StructuredInMemoryTemplate::from_zip(zip)?;
         Ok(TypstZip(resolver))
     }
 }

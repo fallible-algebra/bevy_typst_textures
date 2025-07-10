@@ -1,15 +1,17 @@
 use derive_more::*;
 use std::{
+    collections::BTreeMap,
     io::{Read, Seek},
     path::PathBuf,
 };
+use typst_as_lib::{TypstEngine, TypstTemplateMainFile};
 use zip::ZipArchive;
 
 use typst::syntax::{FileId, Source, VirtualPath};
 
 use crate::asset_loading::TypstAssetError;
 
-use super::template::BevyTypstDotToml;
+use serde::{Deserialize, Serialize};
 
 pub struct ArchiveFileResolver<T> {
     pub archive: T,
@@ -24,8 +26,8 @@ pub enum FilePreloaderError {
     NoMainDotTyp,
 }
 
-#[derive(Debug)]
-pub struct StaticResolverForBoth {
+#[derive(Debug, Clone)]
+pub struct StructuredInMemoryTemplate {
     pub loaded_toml: BevyTypstDotToml,
     pub loaded_fonts: Vec<typst::text::Font>,
     pub loaded_main: String,
@@ -34,21 +36,17 @@ pub struct StaticResolverForBoth {
     pub source_resolver: Vec<Source>,
 }
 
-macro_rules! log_and_pass {
-    ($x:expr) => {{
-        if $x.is_err() {
-            println!(
-                "[{}:{}] Typst file resolution warning: {:?}",
-                file!(),
-                line!(),
-                $x
-            )
-        }
-        $x
-    }};
-}
+impl StructuredInMemoryTemplate {
+    pub fn to_engine(self) -> (TypstEngine<TypstTemplateMainFile>, BevyTypstDotToml) {
+        let engine = TypstEngine::builder()
+            .main_file(self.loaded_main)
+            .with_static_file_resolver(self.file_resolver)
+            .with_static_source_file_resolver(self.source_resolver)
+            .fonts(self.loaded_fonts)
+            .build();
+        (engine, self.loaded_toml)
+    }
 
-impl StaticResolverForBoth {
     pub fn from_zip<R: Read + Seek>(mut zip: ZipArchive<R>) -> Result<Self, TypstAssetError> {
         use serde::Deserialize;
         let mut typst_dot_toml_path = None;
@@ -116,7 +114,7 @@ impl StaticResolverForBoth {
         let loaded_toml = typst_dot_toml_path.ok_or(TypstAssetError::Preloader(
             FilePreloaderError::NoPackageDotToml,
         ))?;
-        Ok(StaticResolverForBoth {
+        Ok(StructuredInMemoryTemplate {
             loaded_toml,
             loaded_fonts,
             path_given: PathBuf::from("/"),
@@ -125,118 +123,23 @@ impl StaticResolverForBoth {
             loaded_main,
         })
     }
+}
 
-    // #[cfg(not(target_arch = "wasm32"))]
-    // pub fn get_from_local_dir(root: PathBuf) -> Result<Self, FilePreloaderError> {
-    //     use serde::Deserialize;
-    //     use std::io::Read;
-    //     use typst::syntax::Source;
-    //     let walk = walkdir::WalkDir::new(&root);
-    //     let mut typst_dot_toml_path = None;
-    //     let mut main_dot_typ = None;
-    //     let mut font_paths = vec![];
-    //     let mut source_paths = vec![];
-    //     let mut bin_paths = vec![];
-    //     for dir_entry in walk {
-    //         match dir_entry {
-    //             Ok(dir_entry) => {
-    //                 if dir_entry.file_type().is_file() {
-    //                     // match on files.
-    //                     match dir_entry
-    //                         .path()
-    //                         .extension()
-    //                         .and_then(|os_str| os_str.to_str())
-    //                     {
-    //                         Some("typ") => {
-    //                             if dir_entry.file_name() == "main.typ" {
-    //                                 main_dot_typ = Some(dir_entry.path().to_owned());
-    //                             } else {
-    //                                 source_paths.push(dir_entry.path().to_owned())
-    //                             }
-    //                         }
-    //                         Some("otf") => font_paths.push(dir_entry.path().to_owned()),
-    //                         Some("toml") if dir_entry.file_name() == "package.toml" => {
-    //                             typst_dot_toml_path = Some(dir_entry.path().to_owned())
-    //                         }
-    //                         _ => bin_paths.push(dir_entry.path().to_owned()),
-    //                     }
-    //                 }
-    //             }
-    //             Err(err) => {
-    //                 bevy::log::error!("Error during during typst preload: {err}")
-    //             }
-    //         }
-    //     }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BevyTypstDotToml {
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub authors: Vec<String>,
+    #[serde(default)]
+    pub asset_requests: BTreeMap<PathBuf, Option<FileTypeHint>>,
+    #[serde(default)]
+    pub package_requests: Vec<String>,
+}
 
-    //     let join_and_open = |path: PathBuf| log_and_pass!(fs::File::open(dbg!(&path))).ok();
-    //     let make_path_relative = |path: PathBuf| {
-    //         let one_pass = path.strip_prefix(&root).unwrap();
-    //         let final_pass = if one_pass.is_absolute() {
-    //             one_pass.strip_prefix("/").unwrap()
-    //         } else {
-    //             one_pass
-    //         };
-    //         VirtualPath::new(final_pass)
-    //     };
-    //     let loaded_toml = typst_dot_toml_path
-    //         .and_then(join_and_open)
-    //         .and_then(|mut file| {
-    //             let mut buf = String::new();
-    //             log_and_pass!(file.read_to_string(&mut buf)).ok()?;
-    //             Some(buf)
-    //         })
-    //         .and_then(|data| BevyTypstDotToml::deserialize(toml::Deserializer::new(&data)).ok())
-    //         .ok_or(FilePreloaderError::NoPackageDotToml)?;
-    //     let loaded_main = main_dot_typ
-    //         .and_then(join_and_open)
-    //         .and_then(|mut file| {
-    //             let mut buf = String::new();
-    //             log_and_pass!(file.read_to_string(&mut buf)).ok()?;
-    //             Some(buf)
-    //         })
-    //         .ok_or(FilePreloaderError::NoMainDotTyp)?;
-    //     let loaded_fonts: Vec<_> = font_paths
-    //         .into_iter()
-    //         .filter_map(join_and_open)
-    //         .filter_map(|mut file| {
-    //             let mut buf = vec![];
-    //             log_and_pass!(file.read_to_end(&mut buf)).ok()?;
-    //             typst::text::Font::new(typst::foundations::Bytes::from(buf), 0)
-    //         })
-    //         .collect();
-    //     // let file_resolver = StaticFileResolver::new(std::iter::empty());
-    //     let binaries = bin_paths
-    //         .into_iter()
-    //         .filter_map(|relative_path| {
-    //             join_and_open(relative_path.clone()).map(|file| (file, relative_path))
-    //         })
-    //         .filter_map(|(mut file, relative_path)| {
-    //             let mut buf = Vec::new();
-    //             log_and_pass!(file.read_to_end(&mut buf)).ok()?;
-    //             Some((FileId::new(None, make_path_relative(relative_path)), buf))
-    //         });
-    //     let file_resolver = binaries.collect();
-    //     let sources = source_paths
-    //         .into_iter()
-    //         .filter_map(|relative_path| {
-    //             join_and_open(relative_path.clone()).map(|file| (file, relative_path))
-    //         })
-    //         .filter_map(|(mut file, relative_path)| {
-    //             let mut buf = String::new();
-    //             log_and_pass!(file.read_to_string(&mut buf)).ok()?;
-    //             Some(Source::new(
-    //                 FileId::new(None, make_path_relative(relative_path)),
-    //                 buf,
-    //             ))
-    //         });
-    //     let source_resolver = sources.collect();
-    //     Ok(StaticResolverForBoth {
-    //         loaded_toml,
-    //         loaded_fonts,
-    //         path_given: root.clone(),
-    //         file_resolver,
-    //         source_resolver,
-    //         loaded_main,
-    //     })
-    // }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum FileTypeHint {
+    Image,
+    Font,
+    Typst,
 }

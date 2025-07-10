@@ -8,7 +8,11 @@ bevy_ecs = "0.16"
 bevy_asset = "0.16"
 bevy_app = "0.16"
 bevy_reflect = "0.16"
+bevy_image = "0.16"
+bevy_log = "0.16"
 typst-as-lib = "=0.14.4"
+typst = "0.13.1"
+typst-render = "0.13.1"
 serde = "1"
 derive_more = { version = "1.0.0", features = ["error"] }
 zip = {version = "4.2.0", default-features = false, features = [
@@ -19,5 +23,7 @@ zip = {version = "4.2.0", default-features = false, features = [
     "time",
     "zstd",
 ]}
-typst = "0.13.1"
 toml = "0.8.19"
+uuid = { version = "1", features = ["v4"] }
+wgpu-types = "*"
+tiny-skia = "0.11"

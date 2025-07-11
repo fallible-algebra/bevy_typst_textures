@@ -12,7 +12,7 @@ use bevy_ecs::{
     system::{Commands, Res, ResMut},
 };
 use bevy_image::Image;
-use bevy_tasks::ComputeTaskPool;
+use bevy_tasks::{AsyncComputeTaskPool, ComputeTaskPool};
 use serde::Serialize;
 use serde_json::value::Serializer;
 use typst::{diag::Severity, foundations::Dict, layout::PagedDocument};
@@ -66,7 +66,6 @@ pub struct TypstTemplateServer {
     pub templates: HashMap<PathBuf, Handle<TypstZip>>,
     pub jobs: VecDeque<TypstJob>,
     pub jobs_per_frame: Option<u32>,
-    _sender_cache: VecDeque<Sender<bevy_image::Image>>,
 }
 
 impl TypstTemplateServer {
@@ -111,8 +110,7 @@ impl TypstTemplateServer {
                 }
                 let rendered = typst_render::render(&page.pages[0], job.job_options.pixels_per_pt);
                 let sender = job.send_target.clone();
-                template_server._sender_cache.push_back(sender.clone());
-                ComputeTaskPool::get()
+                AsyncComputeTaskPool::get()
                     .spawn(async move {
                         sender
                             .send(bevy_image::Image::new(
@@ -160,7 +158,6 @@ impl TypstTemplateServer {
             templates: HashMap::new(),
             jobs: VecDeque::new(),
             jobs_per_frame: Some(2),
-            _sender_cache: VecDeque::new(),
         }
     }
 

@@ -1,16 +1,19 @@
 use std::{
     collections::{HashMap, VecDeque},
     path::PathBuf,
+    sync::Arc,
 };
 
-use bevy_app::{First, Plugin, Startup};
+use async_channel::Sender;
+use bevy_app::{Plugin, Startup, Update};
 use bevy_asset::{AssetServer, Assets, Handle, RenderAssetUsages};
 use bevy_ecs::{
     resource::Resource,
     system::{Commands, Res, ResMut},
 };
 use bevy_image::Image;
-use serde::{Deserialize, Serialize};
+use bevy_tasks::ComputeTaskPool;
+use serde::Serialize;
 use serde_json::value::Serializer;
 use typst::{diag::Severity, foundations::Dict, layout::PagedDocument};
 use wgpu_types::{Extent3d, TextureDimension, TextureFormat};
@@ -26,7 +29,7 @@ impl Plugin for TypstTexturesPlugin {
     fn build(&self, app: &mut bevy_app::App) {
         app.add_plugins(TypstTextureAssetsPlugin);
         app.add_systems(Startup, TypstTemplateServer::insert_to_world)
-            .add_systems(First, TypstTemplateServer::do_jobs);
+            .add_systems(Update, TypstTemplateServer::do_jobs);
     }
 }
 
@@ -35,15 +38,25 @@ pub struct TypstJob {
     pub use_template: Handle<TypstZip>,
     pub data_in: Dict,
     pub send_target: async_channel::Sender<bevy_image::Image>,
-    pub target_dims: Option<(u32, u32)>,
-    pub scale: f32,
+    pub job_options: TypstJobOptions,
+    _handle: Handle<Image>,
 }
 
 #[derive(Debug, Clone)]
-pub struct TypstJobOption {
+pub struct TypstJobOptions {
     pub pixels_per_pt: f32,
     pub target_dimensions: Option<(u32, u32)>,
     pub asset_usage: RenderAssetUsages,
+}
+
+impl Default for TypstJobOptions {
+    fn default() -> Self {
+        Self {
+            pixels_per_pt: 1.0,
+            target_dimensions: None,
+            asset_usage: RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
+        }
+    }
 }
 
 #[derive(Debug, Resource)]
@@ -51,8 +64,9 @@ pub struct TypstTemplateServer {
     asset_server: AssetServer,
     pub fallback: Image,
     pub templates: HashMap<PathBuf, Handle<TypstZip>>,
-    jobs: VecDeque<TypstJob>,
-    jobs_per_frame: Option<u32>,
+    pub jobs: VecDeque<TypstJob>,
+    pub jobs_per_frame: Option<u32>,
+    _sender_cache: VecDeque<Sender<bevy_image::Image>>,
 }
 
 impl TypstTemplateServer {
@@ -69,13 +83,13 @@ impl TypstTemplateServer {
             .unwrap_or(template_server.jobs.len() as u32);
         let mut jobs_done = 0;
         let mut compiled_map = HashMap::new();
-        while let Some(job) = template_server.jobs.pop_front()
-            && jobs_done < max_jobs
+        while jobs_done < max_jobs
+            && let Some(job) = template_server.jobs.pop_front()
         {
             if template_server.asset_server.is_loaded(&job.use_template)
                 && let Some(template) = templates.get(&job.use_template)
             {
-                let (engine, toml) = compiled_map
+                let (engine, _) = compiled_map
                     .entry(job.use_template.clone())
                     .or_insert_with(|| template.0.clone().to_engine());
                 let compiled = engine.compile_with_input::<_, PagedDocument>(job.data_in);
@@ -95,25 +109,26 @@ impl TypstTemplateServer {
                         bevy_log::warn!("[TYPST WARNING for {:?}] {}", path, warning.message);
                     }
                 }
-                let rendered = typst_render::render(&page.pages[0], job.scale);
-                let result = job.send_target.try_send(bevy_image::Image::new(
-                    Extent3d {
-                        width: rendered.width(),
-                        height: rendered.height(),
-                        depth_or_array_layers: 1,
-                    },
-                    TextureDimension::D2,
-                    rendered.data().to_vec(),
-                    TextureFormat::Rgba8UnormSrgb,
-                    RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
-                ));
-                match result {
-                    Ok(_) => {}
-                    Err(err) => bevy_log::error!(
-                        "[TYPST SEND IMAGE TO ASSET SERVER ERROR @ {path:?}] {err}"
-                    ),
-                }
-                println!("WORKS LOL");
+                let rendered = typst_render::render(&page.pages[0], job.job_options.pixels_per_pt);
+                let sender = job.send_target.clone();
+                template_server._sender_cache.push_back(sender.clone());
+                ComputeTaskPool::get()
+                    .spawn(async move {
+                        sender
+                            .send(bevy_image::Image::new(
+                                Extent3d {
+                                    width: rendered.width(),
+                                    height: rendered.height(),
+                                    depth_or_array_layers: 1,
+                                },
+                                TextureDimension::D2,
+                                rendered.data().to_vec(),
+                                TextureFormat::Rgba8UnormSrgb,
+                                RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
+                            ))
+                            .await
+                    })
+                    .detach();
             } else {
                 template_server.jobs.push_back(job);
             }
@@ -144,7 +159,8 @@ impl TypstTemplateServer {
             fallback,
             templates: HashMap::new(),
             jobs: VecDeque::new(),
-            jobs_per_frame: None,
+            jobs_per_frame: Some(2),
+            _sender_cache: VecDeque::new(),
         }
     }
 
@@ -152,18 +168,21 @@ impl TypstTemplateServer {
         &mut self,
         zip: PathBuf,
         data_in: impl Serialize,
-        target_dims: Option<(u32, u32)>,
-        scale: f32,
+        options: TypstJobOptions,
     ) -> Handle<Image> {
         let asset_server = self.asset_server.clone();
         let template = self
             .templates
             .entry(zip.clone())
             .or_insert_with(|| asset_server.load(zip));
-        let (sender, reciever) = async_channel::bounded::<bevy_image::Image>(1);
-        let handle: Handle<Image> = self
-            .asset_server
-            .add_async(async move { reciever.recv().await });
+        let (sender, receiver) = async_channel::unbounded::<bevy_image::Image>();
+        let handle: Handle<Image> = self.asset_server.add_async(async move {
+            let res = receiver.recv().await;
+            if let Err(res) = &res {
+                bevy_log::error!("[TYPST ASYNC JOB ERROR] {res}")
+            }
+            res
+        });
         let Ok(data_in): Result<serde_json::Value, _> = data_in.serialize(Serializer) else {
             bevy_log::error!(
                 "[TYPST INPUT ERROR] Could not transform value into a serde json as interim for Dict."
@@ -178,8 +197,8 @@ impl TypstTemplateServer {
             use_template: template.clone(),
             data_in,
             send_target: sender,
-            target_dims,
-            scale,
+            job_options: options,
+            _handle: handle.clone(),
         });
         handle
     }

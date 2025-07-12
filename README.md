@@ -16,4 +16,4 @@ A **`.zip`** file containing:
         - a list of bevy `asset/` folder asset requests (doesn't do anything right now)
         - a list of typst "universe" package requests (doesn't do anything right now)
 3. Inclusion of all fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)
-4. Whatever assets needed, reference them in a typst project like you would any other typst project.
+4. Whatever assets needed, reference them in a typst project like you would in any other typst project.

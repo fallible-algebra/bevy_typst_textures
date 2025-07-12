@@ -42,6 +42,7 @@ impl StructuredInMemoryTemplate {
             .main_file(self.loaded_main)
             .with_static_file_resolver(self.file_resolver)
             .with_static_source_file_resolver(self.source_resolver)
+            .with_package_file_resolver()
             .fonts(self.loaded_fonts)
             .build();
         (engine, self.loaded_toml)

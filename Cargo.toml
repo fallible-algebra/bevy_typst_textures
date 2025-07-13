@@ -3,6 +3,10 @@ name = "bevy_typst_textures"
 version = "0.0.1"
 edition = "2024"
 
+[features]
+typst-resolve-ureq = ["typst-as-lib/ureq"]
+typst-resolve-reqwest = ["typst-as-lib/reqwest"]
+packages = ["typst-as-lib/packages"]
 
 [dependencies]
 bevy_ecs = "0.16"
@@ -12,7 +16,8 @@ bevy_reflect = "0.16"
 bevy_image = "0.16"
 bevy_log = "0.16"
 bevy_tasks = "0.16"
-typst-as-lib = {version = "=0.14.4", features = ["packages", "reqwest"]}
+typst-as-lib = {version = "=0.14.4"}
+# typst-as-lib = {git = "https://github.com/fallible-algebra/typst-as-lib-fork"}
 typst = "0.13.1"
 typst-render = "0.13.1"
 serde = "1"

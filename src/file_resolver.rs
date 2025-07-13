@@ -1,5 +1,4 @@
 use derive_more::*;
-use typst::engine;
 use std::{
     collections::BTreeMap,
     io::{Read, Seek},

@@ -1,10 +1,8 @@
 use std::{
     collections::{HashMap, VecDeque},
     path::PathBuf,
-    sync::Arc,
 };
 
-use async_channel::Sender;
 use bevy_app::{Plugin, Startup, Update};
 use bevy_asset::{AssetServer, Assets, Handle, RenderAssetUsages};
 use bevy_ecs::{
@@ -12,7 +10,7 @@ use bevy_ecs::{
     system::{Commands, Res, ResMut},
 };
 use bevy_image::Image;
-use bevy_tasks::{AsyncComputeTaskPool, ComputeTaskPool};
+use bevy_tasks::AsyncComputeTaskPool;
 use serde::Serialize;
 use serde_json::value::Serializer;
 use typst::{diag::Severity, foundations::Dict, layout::PagedDocument};

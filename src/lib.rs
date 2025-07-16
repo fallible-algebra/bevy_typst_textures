@@ -3,7 +3,7 @@ use std::{
     path::PathBuf,
 };
 
-use bevy_app::{Plugin, Startup, Update};
+use bevy_app::{Plugin, PreStartup, Update};
 use bevy_asset::{AssetServer, Assets, Handle, RenderAssetUsages};
 use bevy_ecs::{
     resource::Resource,
@@ -12,7 +12,7 @@ use bevy_ecs::{
 use bevy_image::Image;
 use bevy_tasks::AsyncComputeTaskPool;
 use serde::Serialize;
-use serde_json::value::Serializer;
+use serde_json::{Map, value::Serializer};
 use typst::{diag::Severity, foundations::Dict, layout::PagedDocument};
 use wgpu_types::{Extent3d, TextureDimension, TextureFormat};
 
@@ -26,7 +26,7 @@ pub struct TypstTexturesPlugin;
 impl Plugin for TypstTexturesPlugin {
     fn build(&self, app: &mut bevy_app::App) {
         app.add_plugins(TypstTextureAssetsPlugin);
-        app.add_systems(Startup, TypstTemplateServer::insert_to_world)
+        app.add_systems(PreStartup, TypstTemplateServer::insert_to_world)
             .add_systems(Update, TypstTemplateServer::do_jobs);
     }
 }
@@ -159,7 +159,11 @@ impl TypstTemplateServer {
         }
     }
 
-    pub fn add_job(
+    pub fn add_job(&mut self, zip: PathBuf, options: TypstJobOptions) -> Handle<Image> {
+        self.add_job_with_data_in(zip, serde_json::Value::Object(Map::new()), options)
+    }
+
+    pub fn add_job_with_data_in(
         &mut self,
         zip: PathBuf,
         data_in: impl Serialize,

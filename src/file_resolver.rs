@@ -43,7 +43,10 @@ impl StructuredInMemoryTemplate {
             .with_static_file_resolver(self.file_resolver)
             .with_static_source_file_resolver(self.source_resolver)
             .fonts(self.loaded_fonts);
-        #[cfg(all(feature = "packages", any(feature = "typst-resolve-ureq", feature = "typst-resolve-reqwest")))]
+        #[cfg(all(
+            feature = "packages",
+            any(feature = "typst-resolve-ureq", feature = "typst-resolve-reqwest")
+        ))]
         let engine = engine.with_package_file_resolver();
         let engine = engine.build();
         (engine, self.loaded_toml)
@@ -64,6 +67,10 @@ impl StructuredInMemoryTemplate {
             }
             if file.is_file() {
                 let path_buf = PathBuf::from(file.name());
+                if path_buf.starts_with("__MACOSX") {
+                    continue;
+                }
+                bevy_log::info!("{prefix:?}, {path_buf:?}");
                 let path = path_buf.strip_prefix(prefix.as_ref().unwrap()).unwrap();
                 match path.extension().and_then(|os| os.to_str()) {
                     Some("typ") => {

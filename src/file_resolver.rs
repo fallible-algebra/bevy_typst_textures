@@ -70,7 +70,6 @@ impl StructuredInMemoryTemplate {
                 if path_buf.starts_with("__MACOSX") {
                     continue;
                 }
-                bevy_log::info!("{prefix:?}, {path_buf:?}");
                 let path = path_buf.strip_prefix(prefix.as_ref().unwrap()).unwrap();
                 match path.extension().and_then(|os| os.to_str()) {
                     Some("typ") => {

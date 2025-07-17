@@ -2,7 +2,7 @@
 
 [![](./screenshot.png)](./examples/3d.rs)
 
-A simple `Resource` for generating rasterised textures (`Handle<Image>`) out of structured, zipped typst projects, built on `typst-as-lib`.
+A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of structured, zipped typst projects, built on `typst-as-lib`.
 
 # Example
 
@@ -21,7 +21,7 @@ fn main() {
 fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
     commands.spawn(Camera2d);
     commands.spawn(Sprite {
-        image: typst_server.add_job("example.zip".into(), TypstJobOptions::default()),
+        image: typst_server.add_job("my_zip_in_the_asset_folder.zip".into(), TypstJobOptions::default()),
         ..default()
     });
 }
@@ -29,18 +29,18 @@ fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
 
 ## Expected structure for Typst Assets
 
-A **`.zip`** file containing, at the very least:
+A **`.zip`** archive containing:
 1. a **`main.typ`** file.
-2. a **`package.toml`** file:
+2. an optional `package.toml` file:
     - This doesn't need to be populated with anything right now.
     - That said, it expects:
         - a name field
         - an list of author strings
         - a list of bevy `asset/` folder asset requests (doesn't do anything right now)
         - a list of typst "universe" package requests (doesn't do anything right now)
-    - All files and fonts referenced by the 
 3. Inclusion of all fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)
-4. Whatever assets needed, reference them in a typst project like you would in any other typst project.
+    - unless either of the `typst-search-system-fonts` or `typst-asset-fonts` crate features are enabled, which will enable use of system fonts or the "default" typst fonts as embedded assets, respectively.
+4. Typst modules, assets, images, SVGs, data, etc.
 
 ## Limitations
 
@@ -50,7 +50,7 @@ This package expects typst assets as zip archives to simplify the asset-fetching
 
 Packages are supported, but not on web. This may change in the future, but for now this does not work.
 
-The archive unzipping is a bit fragile right now, too. Lots of `unwrap`s and assumptions about how different OSs handle zip archives, and some ad-hoc dealing with how they pollute filesystems with metadata. Because zipping manually is a pain, I'd suggest either setting up something to create zips of your typst assets folders in a `build.rs` script or as part of a watch command on your project.
+The archive unzipping is a bit fragile right now. Lots of `unwrap`s and assumptions about how different OSs handle zip archives, and some ad-hoc dealing with how they pollute filesystems with metadata (`__MACOS/` delenda est). Because zipping manually is a pain, I'd suggest setting up something to create zips of your typst assets folders in a `build.rs` script or as part of a watch command on your project.
 
 `add_job_with_data` uses serde to serialize the input data type to json before then de-seralizing it to typst's `Dict` type. This presents the regular `serde` overhead, mostly.
 
@@ -64,6 +64,26 @@ All these features are pass-through features to `typst-as-lib` features, except 
 - `typst-search-system-fonts`: Allow access to system fonts from Typst.
 - `typst-asset-fonts`: Embed the "default" fonts of typst, embedding them directly in the program's executable.
 
+## Running on Web
+
+Remember to set a web-compatible backend for `getrandom` when building for web. I.e. using the bevy cli: `RUSTFLAGS='--cfg getrandom_backend="wasm_js"' bevy run web`.
+
 ## Why not [`Velyst`](https://github.com/voxell-tech/velyst)?
 
-This crate sits in the niche of needing rasterised textures rather than full & interactive typst integration. Velyst is much more powerful than this crate, but also exists in a different niche.
+This crate sits in the niche of needing rasterized textures rather than full & interactive typst integration. Velyst is much more powerful than this crate, but also exists in a different niche.
+
+## Feature Creep
+
+Planned features:
+
+- Move typst compilation & rasterization to the async compute pool completely.
+- Support for standalone, non-archived typst files (useful for when the asset/system font features are enabled).
+- Support for loading of .tar.gz archives.
+- If/when `typst-as-lib` supports packages in the browser, support packages in the browser.
+- Optional resizing of rasterized Typst output before adding it to Bevy's asset management.
+- Optionally rasterize multi-page output to a texture atlas.
+- Trim down dependencies, or at least feature gate more of them.
+
+## Licence
+
+This is published under a dual MIT & Apache 2.0 licence, as is generally kosher for the bevy ecosystem.

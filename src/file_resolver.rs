@@ -15,12 +15,6 @@ use serde::{Deserialize, Serialize};
 #[cfg(any(feature = "typst-asset-fonts", feature = "typst-search-system-fonts",))]
 use typst_as_lib::typst_kit_options::TypstKitFontOptions;
 
-pub struct ArchiveFileResolver<T> {
-    pub archive: T,
-    pub in_memory_fs: T,
-    pub allow_packages: bool,
-}
-
 #[derive(Debug, Error, Display)]
 pub enum FilePreloaderError {
     NoPackageDotToml,
@@ -132,9 +126,7 @@ impl StructuredInMemoryTemplate {
         }
         let loaded_main =
             main_dot_typ.ok_or(TypstAssetError::Preloader(FilePreloaderError::NoMainDotTyp))?;
-        let loaded_toml = typst_dot_toml_path.ok_or(TypstAssetError::Preloader(
-            FilePreloaderError::NoPackageDotToml,
-        ))?;
+        let loaded_toml = typst_dot_toml_path.unwrap_or_default();
         Ok(StructuredInMemoryTemplate {
             loaded_toml,
             loaded_fonts,
@@ -146,7 +138,7 @@ impl StructuredInMemoryTemplate {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct BevyTypstDotToml {
     #[serde(default)]
     pub name: Option<String>,

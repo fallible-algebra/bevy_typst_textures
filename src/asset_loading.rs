@@ -6,9 +6,9 @@ use bevy_reflect::TypePath;
 
 use crate::file_resolver::{FilePreloaderError, StructuredInMemoryTemplate};
 
-pub(crate) struct TypstTextureAssetsPlugin;
+pub struct AssetPluginForTypstTextures;
 
-impl Plugin for TypstTextureAssetsPlugin {
+impl Plugin for AssetPluginForTypstTextures {
     fn build(&self, app: &mut App) {
         app.init_asset::<TypstZip>();
         app.init_asset_loader::<TypstZipLoader>();

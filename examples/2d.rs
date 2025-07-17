@@ -11,7 +11,7 @@ fn main() {
 fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
     commands.spawn(Camera2d);
     commands.spawn(Sprite {
-        image: typst_server.add_job("example.zip".into(), TypstJobOptions::default()),
+        image: typst_server.add_job("example.zip", TypstJobOptions::default()),
         ..default()
     });
 }

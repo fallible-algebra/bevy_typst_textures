@@ -21,9 +21,9 @@ fn start(
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::new(1., 1., 1.))),
         MeshMaterial3d(materials.add(StandardMaterial {
-            // "add_job"/"add_job_with_data_in" gets called
+            // "add_job"/"add_job_with_input" gives a `Handle<Image>`
             base_color_texture: Some(
-                typst_server.add_job("example.zip".into(), TypstJobOptions::default()),
+                typst_server.add_job("example.zip", TypstJobOptions::default()),
             ),
             ..default()
         })),

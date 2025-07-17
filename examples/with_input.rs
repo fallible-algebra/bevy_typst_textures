@@ -12,8 +12,8 @@ fn main() {
 fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
     commands.spawn(Camera2d);
     commands.spawn(Sprite {
-        image: typst_server.add_job_with_data_in(
-            "example.zip".into(),
+        image: typst_server.add_job_with_input(
+            "example.zip",
             DataIn {
                 text: "This was passed to Typst as extra data.".into(),
             },

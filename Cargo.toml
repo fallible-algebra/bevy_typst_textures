@@ -1,6 +1,6 @@
 [package]
 name = "bevy_typst_textures"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "A simple Resource for generating rasterized textures out of either standalone .typ files or structured, zipped typst projects, built on typst-as-lib."

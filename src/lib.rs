@@ -1,4 +1,4 @@
-//! A simple Bevy `Resource` for generating rasterized textures (`Handle<Image>`) out of structured, zipped typst projects, built on `typst-as-lib`.
+//! A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of either standalone .typ files or structured, zipped typst projects, built on `typst-as-lib`.
 //!
 //! # Example
 //!
@@ -26,7 +26,9 @@
 //!
 //! ## Expected structure for Typst Assets
 //!
-//! A **`.zip`** archive containing:
+//! Standalone `.typ` files can be loaded, but they will not have access to the bevy `asset/` folder and if you want to display text then either `typst-search-system-fonts` or `typst-asset-fonts` features must be enabled.
+//!
+//! For complex typst projects that need access to guaranteed, specific fonts as well as other assets, you'll need to create a **`.zip`** archive containing:
 //! 1. a **`main.typ`** file.
 //! 2. an optional `package.toml` file:
 //!     - This doesn't need to be populated with anything right now.
@@ -35,8 +37,8 @@
 //!         - an list of author strings
 //!         - a list of bevy `asset/` folder asset requests (doesn't do anything right now)
 //!         - a list of typst "universe" package requests (doesn't do anything right now)
-//! 3. Inclusion of all fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)
-//!     - unless either of the `typst-search-system-fonts` or `typst-asset-fonts` crate features are enabled, which will enable use of system fonts or the "default" typst fonts as embedded assets, respectively.
+//! 3. Any .otf fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)
+//!     - unless either of the `typst-search-system-fonts` or `typst-asset-fonts` crate features are enabled, which will enable use of system fonts or the "default" typst fonts as embedded assets, respectively. This does still put the onus on you and your users to have these fonts either installed or bundled.
 //! 4. Typst modules, assets, images, SVGs, data, etc.
 //!
 //! ## Limitations
@@ -79,12 +81,12 @@ use serde_json::{Map, value::Serializer};
 use typst::{diag::Severity, foundations::Dict, layout::PagedDocument};
 use wgpu_types::{Extent3d, TextureDimension, TextureFormat};
 
-use crate::asset_loading::{AssetPluginForTypstTextures, TypstZip};
+use crate::asset_loading::{AssetPluginForTypstTextures, TypstTemplate};
 
 pub mod asset_loading;
 pub mod file_resolver;
 
-/// This crate's core plugin. Add this to your app to enable typst zip asset loading, the TypstTextureServer resource, and typst compilation/rasterisation system.
+/// This crate's core plugin. Add this to your app to enable typst-related asset loading, the TypstTextureServer resource, and typst compilation/rasterisation system.
 #[derive(Debug, Clone, Resource, Default)]
 pub struct TypstTexturesPlugin {
     /// Optional limit on the number of rasterization jobs to process every frame.
@@ -104,7 +106,7 @@ impl Plugin for TypstTexturesPlugin {
 /// The data needed to complete a Typst job.
 #[derive(Debug)]
 pub struct TypstJob {
-    pub use_template: Handle<TypstZip>,
+    pub use_template: Handle<TypstTemplate>,
     pub input: Dict,
     pub send_target: async_channel::Sender<bevy_image::Image>,
     pub job_options: TypstJobOptions,
@@ -137,7 +139,7 @@ impl Default for TypstJobOptions {
 pub struct TypstTextureServer {
     asset_server: AssetServer,
     pub fallback: Image,
-    pub templates: HashMap<PathBuf, Handle<TypstZip>>,
+    pub templates: HashMap<PathBuf, Handle<TypstTemplate>>,
     pub jobs: VecDeque<TypstJob>,
     pub jobs_per_frame: Option<u32>,
 }
@@ -157,7 +159,7 @@ impl TypstTextureServer {
     /// Runs in `Last`. Exposed here to allow for specific scheduling on the user's part.
     pub fn system_do_jobs(
         mut template_server: ResMut<TypstTextureServer>,
-        templates: Res<Assets<TypstZip>>,
+        templates: Res<Assets<TypstTemplate>>,
     ) {
         let max_jobs = template_server
             .jobs_per_frame

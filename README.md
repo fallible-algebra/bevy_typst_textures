@@ -2,7 +2,7 @@
 
 [![](./screenshot.png)](./examples/default_fonts_3d.rs)
 
-A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of structured, zipped typst projects, built on `typst-as-lib`.
+A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of either standalone .typ files or structured, zipped typst projects, built on `typst-as-lib`.
 
 # Example
 
@@ -30,7 +30,9 @@ fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
 
 ## Expected structure for Typst Assets
 
-A **`.zip`** archive containing:
+Standalone `.typ` files can be loaded, but they will not have access to the bevy `asset/` folder and if you want to display text then either `typst-search-system-fonts` or `typst-asset-fonts` features must be enabled.
+
+For complex typst projects that need access to guaranteed, specific fonts as well as other assets, you'll need to create a **`.zip`** archive containing:
 1. a **`main.typ`** file.
 2. an optional `package.toml` file:
     - This doesn't need to be populated with anything right now.
@@ -39,8 +41,8 @@ A **`.zip`** archive containing:
         - an list of author strings
         - a list of bevy `asset/` folder asset requests (doesn't do anything right now)
         - a list of typst "universe" package requests (doesn't do anything right now)
-3. Inclusion of all fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)
-    - unless either of the `typst-search-system-fonts` or `typst-asset-fonts` crate features are enabled, which will enable use of system fonts or the "default" typst fonts as embedded assets, respectively.
+3. Any .otf fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)
+    - unless either of the `typst-search-system-fonts` or `typst-asset-fonts` crate features are enabled, which will enable use of system fonts or the "default" typst fonts as embedded assets, respectively. This does still put the onus on you and your users to have these fonts either installed or bundled.
 4. Typst modules, assets, images, SVGs, data, etc.
 
 ## Limitations

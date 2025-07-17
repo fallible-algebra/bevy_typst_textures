@@ -10,7 +10,7 @@ pub struct AssetPluginForTypstTextures;
 
 impl Plugin for AssetPluginForTypstTextures {
     fn build(&self, app: &mut App) {
-        app.init_asset::<TypstZip>();
+        app.init_asset::<TypstTemplate>();
         app.init_asset_loader::<TypstZipLoader>();
     }
 }
@@ -46,10 +46,10 @@ impl std::fmt::Display for TypstAssetError {
 impl std::error::Error for TypstAssetError {}
 
 #[derive(Debug, Asset, TypePath)]
-pub struct TypstZip(pub StructuredInMemoryTemplate);
+pub struct TypstTemplate(pub StructuredInMemoryTemplate);
 
 impl AssetLoader for TypstZipLoader {
-    type Asset = TypstZip;
+    type Asset = TypstTemplate;
 
     type Settings = ();
 
@@ -74,7 +74,7 @@ impl AssetLoader for TypstZipLoader {
             let cursor = Cursor::new(buffer);
             let zip = zip::ZipArchive::new(cursor).map_err(TypstAssetError::Zip)?;
             let resolver = StructuredInMemoryTemplate::from_zip(zip)?;
-            Ok(TypstZip(resolver))
+            Ok(TypstTemplate(resolver))
         } else if load_context
             .path()
             .extension()
@@ -94,7 +94,7 @@ impl AssetLoader for TypstZipLoader {
                 .read_to_string(&mut buffer)
                 .await
                 .map_err(TypstAssetError::Io)?;
-            Ok(TypstZip(StructuredInMemoryTemplate {
+            Ok(TypstTemplate(StructuredInMemoryTemplate {
                 loaded_main: buffer,
                 ..Default::default()
             }))

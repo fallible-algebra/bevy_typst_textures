@@ -256,8 +256,8 @@ impl TypstTextureServer {
     }
 
     /// Add a typst job to the queue, returning a [`Handle<Image>`] immediately while the
-    /// compilation and rasterization happens later. A valid asset is either a .zip archive 
-    /// that follows the structure set out at the root of this crate or a standalone .typ 
+    /// compilation and rasterization happens later. A valid asset is either a .zip archive
+    /// that follows the structure set out at the root of this crate or a standalone .typ
     /// file with no non-sys imports.
     pub fn add_job(&mut self, path: impl Into<PathBuf>, options: TypstJobOptions) -> Handle<Image> {
         self.add_job_with_input(path, serde_json::Value::Object(Map::new()), options)
@@ -265,7 +265,7 @@ impl TypstTextureServer {
 
     /// Add a typst job to the queue, with `input` being some type to be converted to the
     /// `Dict` accessible via `#import sys : inputs` in the typst project. A valid asset is
-    /// either a .zip archive that follows the structure set out at the root of this crate 
+    /// either a .zip archive that follows the structure set out at the root of this crate
     /// or a standalone .typ file with no non-sys imports.
     pub fn add_job_with_input(
         &mut self,

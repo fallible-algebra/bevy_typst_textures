@@ -56,9 +56,13 @@ The archive unzipping is a bit fragile right now, too. Lots of `unwrap`s and ass
 
 ## Cargo Features
 
-All these features are passthroughs to `typst-as-lib` features, except for `packages` which is both a passthrough *and* enables package fetching for all typst templates you load. This should be a plugin option, but for now it is not.
+All these features are pass-through features to `typst-as-lib` features, except for `packages` which is both a passthrough *and* enables package fetching for all typst templates you load.
 
-- ``
+- `packages`: Enable access to Universe packages. Package fetching is blocking, doesn't work on web, and relies on you also enabling one of the following:
+    - `typst-resolve-ureq`: Use `ureq` to resolve packages.
+    - `typst-resolve-reqwest`: Use `reqwest` to resolve packages.
+- `typst-search-system-fonts`: Allow access to system fonts from Typst.
+- `typst-asset-fonts`: Embed the "default" fonts of typst, embedding them directly in the program's executable.
 
 ## Why not [`Velyst`](https://github.com/voxell-tech/velyst)?
 

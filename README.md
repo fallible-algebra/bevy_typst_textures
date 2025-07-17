@@ -1,4 +1,6 @@
 # bevy_typst_textures
+[![](https://img.shields.io/crates/v/bevy_typst_textures
+)](https://crates.io/crates/bevy_typst_textures)
 [![](./screenshot.png)](./examples/default_fonts_3d.rs)
 
 A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of either standalone .typ files or structured, zipped typst projects, built on `typst-as-lib`.
@@ -37,7 +39,7 @@ For complex typst projects that need access to guaranteed, specific fonts as wel
     - This doesn't need to be populated with anything right now.
     - That said, it expects:
         - a name field
-        - an list of author strings
+        - a list of author strings
         - a list of bevy `asset/` folder asset requests (doesn't do anything right now)
         - a list of typst "universe" package requests (doesn't do anything right now)
 3. Any .otf fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)

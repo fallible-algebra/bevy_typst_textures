@@ -34,7 +34,7 @@
 //!     - This doesn't need to be populated with anything right now.
 //!     - That said, it expects:
 //!         - a name field
-//!         - an list of author strings
+//!         - a list of author strings
 //!         - a list of bevy `asset/` folder asset requests (doesn't do anything right now)
 //!         - a list of typst "universe" package requests (doesn't do anything right now)
 //! 3. Any .otf fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)

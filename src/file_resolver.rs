@@ -40,7 +40,7 @@ impl StructuredInMemoryTemplate {
             .with_static_source_file_resolver(self.source_resolver)
             .fonts(self.loaded_fonts);
         #[cfg(all(
-            feature = "packages",
+            feature = "typst-packages",
             any(feature = "typst-resolve-ureq", feature = "typst-resolve-reqwest")
         ))]
         let engine = engine.with_package_file_resolver();

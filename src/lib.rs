@@ -1,10 +1,11 @@
-//! A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of structured, zipped typst projects, built on `typst-as-lib`.
+//! A simple Bevy `Resource` for generating rasterized textures (`Handle<Image>`) out of structured, zipped typst projects, built on `typst-as-lib`.
 //!
 //! # Example
 //!
 //! To use this crate, add the `TypstTexturesPlugin` to your bevy app then request textures through `TypstTextureServer`:
 //!
-//! ```rust
+//! ```no_run
+//! use bevy::prelude::*;
 //! use bevy_typst_textures::{TypstJobOptions, TypstTextureServer, TypstTexturesPlugin};
 //!
 //! fn main() {
@@ -54,7 +55,7 @@
 //!
 //! All these features are pass-through features to `typst-as-lib` features.
 //!
-//! - `packages`: Enable access to Universe packages. Package fetching is blocking, doesn't work on web, and relies on you also enabling one of the following:
+//! - `typst-packages`: Enable access to Universe packages. Package fetching is blocking, doesn't work on web, and relies on you also enabling one of the following:
 //!     - `typst-resolve-ureq`: Use `ureq` to resolve packages.
 //!     - `typst-resolve-reqwest`: Use `reqwest` to resolve packages.
 //! - `typst-search-system-fonts`: Allow access to system fonts from Typst.

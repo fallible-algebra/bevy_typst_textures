@@ -12,11 +12,11 @@ readme = "README.md"
 build = "build.rs"
 
 [features]
+typst-packages = ["typst-as-lib/packages"]
 typst-resolve-ureq = ["typst-as-lib/ureq"]
 typst-resolve-reqwest = ["typst-as-lib/reqwest"]
 typst-asset-fonts = ["typst-as-lib/typst-kit-embed-fonts", "typst-as-lib/typst-kit-fonts"]
 typst-search-system-fonts = ["typst-as-lib/typst-kit-fonts"]
-packages = ["typst-as-lib/packages"]
 
 [dependencies]
 bevy_ecs = "0.16"
@@ -50,6 +50,6 @@ async-channel = "2.5"
 [dev-dependencies]
 bevy = "0.16"
 
-# Remember to also run examples on web with `RUSTFLAGS='--cfg getrandom_backend="wasm_js"'` before your run command.
+# Remember to also run examples on web with `RUSTFLAGS='--cfg getrandom_backend="wasm_js"'`.
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }

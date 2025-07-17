@@ -255,24 +255,20 @@ impl TypstTextureServer {
 
     /// Add a typst job to the queue, returning a [`Handle<Image>`] immediately while the
     /// compilation and rasterization happens later.
-    pub fn add_job(
-        &mut self,
-        zip_path: impl Into<PathBuf>,
-        options: TypstJobOptions,
-    ) -> Handle<Image> {
-        self.add_job_with_input(zip_path, serde_json::Value::Object(Map::new()), options)
+    pub fn add_job(&mut self, path: impl Into<PathBuf>, options: TypstJobOptions) -> Handle<Image> {
+        self.add_job_with_input(path, serde_json::Value::Object(Map::new()), options)
     }
 
     /// Add a typst job to the queue, with `input` being some type to be converted to the
     /// `Dict` accessible via `#import sys : inputs` in the typst project.
     pub fn add_job_with_input(
         &mut self,
-        zip_path: impl Into<PathBuf>,
+        path: impl Into<PathBuf>,
         input: impl Serialize,
         options: TypstJobOptions,
     ) -> Handle<Image> {
         let asset_server = self.asset_server.clone();
-        let path_buf = zip_path.into();
+        let path_buf = path.into();
         let template = self
             .templates
             .entry(path_buf.clone())

@@ -1,6 +1,6 @@
 # bevy_typst_textures
 
-[![](./screenshot.png)](./examples/3d.rs)
+[![](./screenshot.png)](./examples/default_fonts_3d.rs)
 
 A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of structured, zipped typst projects, built on `typst-as-lib`.
 
@@ -57,7 +57,7 @@ The archive unzipping is a bit fragile right now. Lots of `unwrap`s and assumpti
 
 ## Cargo Features
 
-All these features are pass-through features to `typst-as-lib` features.
+All these features are pass-through features to `typst-as-lib` features. `typst-asset-fonts` is the only default feature.
 
 - `typst-packages`: Enable access to Universe packages. Package fetching is blocking, doesn't work on web, and relies on you also enabling one of the following:
     - `typst-resolve-ureq`: Use `ureq` to resolve packages.
@@ -78,7 +78,6 @@ This crate sits in the niche of needing rasterized textures rather than full & i
 Planned features:
 
 - Move typst compilation & rasterization to the async compute pool completely.
-- Support for standalone, non-archived typst files (useful for when the asset/system font features are enabled).
 - Support for loading of .tar.gz archives.
 - If/when `typst-as-lib` supports packages in the browser, support packages in the browser.
 - Optional resizing of rasterized Typst output before adding it to Bevy's asset management.

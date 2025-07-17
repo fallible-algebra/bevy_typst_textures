@@ -1,11 +1,17 @@
 use bevy::prelude::*;
 use bevy_typst_textures::{TypstJobOptions, TypstTextureServer, TypstTexturesPlugin};
 
+#[cfg(feature = "typst-asset-fonts")]
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, TypstTexturesPlugin::default()))
         .add_systems(Startup, start)
         .run();
+}
+
+#[cfg(not(feature = "typst-asset-fonts"))]
+fn main() {
+    eprintln!("You need to enable the 'typst-asset-fonts' feature!");
 }
 
 fn start(
@@ -23,7 +29,7 @@ fn start(
         MeshMaterial3d(materials.add(StandardMaterial {
             // "add_job"/"add_job_with_input" gives a `Handle<Image>`
             base_color_texture: Some(
-                typst_server.add_job("example.zip", TypstJobOptions::default()),
+                typst_server.add_job("standalone.typ", TypstJobOptions::default()),
             ),
             ..default()
         })),

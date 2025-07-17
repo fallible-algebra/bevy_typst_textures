@@ -12,6 +12,7 @@ readme = "README.md"
 build = "build.rs"
 
 [features]
+default = ["typst-asset-fonts"]
 typst-packages = ["typst-as-lib/packages"]
 typst-resolve-ureq = ["typst-as-lib/ureq"]
 typst-resolve-reqwest = ["typst-as-lib/reqwest"]

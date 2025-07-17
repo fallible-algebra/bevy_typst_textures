@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
 use bevy_app::{App, Plugin};
-use bevy_asset::{Asset, AssetApp, AssetLoader};
+use bevy_asset::{Asset, AssetApp, AssetLoader, AsyncReadExt};
 use bevy_reflect::TypePath;
 
 use crate::file_resolver::{FilePreloaderError, StructuredInMemoryTemplate};
@@ -24,6 +24,7 @@ pub enum TypstAssetError {
     Io(std::io::Error),
     Zip(zip::result::ZipError),
     Preloader(FilePreloaderError),
+    UnsupportedFormat,
 }
 
 impl std::fmt::Display for TypstAssetError {
@@ -34,6 +35,10 @@ impl std::fmt::Display for TypstAssetError {
             TypstAssetError::Preloader(file_preloader_error) => {
                 write!(f, "TypstAssetError::Preloader: {file_preloader_error}")
             }
+            TypstAssetError::UnsupportedFormat => write!(
+                f,
+                "TypstAssetError::UnsupportedFormat: Neither a .zip archive or a standalone .typ file"
+            ),
         }
     }
 }
@@ -54,16 +59,47 @@ impl AssetLoader for TypstZipLoader {
         &self,
         reader: &mut dyn bevy_asset::io::Reader,
         _settings: &Self::Settings,
-        _load_context: &mut bevy_asset::LoadContext<'_>,
+        load_context: &mut bevy_asset::LoadContext<'_>,
     ) -> std::result::Result<Self::Asset, Self::Error> {
-        let mut buffer: Vec<u8> = vec![];
-        reader
-            .read_to_end(&mut buffer)
-            .await
-            .map_err(TypstAssetError::Io)?;
-        let cursor = Cursor::new(buffer);
-        let zip = zip::ZipArchive::new(cursor).map_err(TypstAssetError::Zip)?;
-        let resolver = StructuredInMemoryTemplate::from_zip(zip)?;
-        Ok(TypstZip(resolver))
+        if load_context
+            .path()
+            .extension()
+            .is_some_and(|ext| ext == "zip")
+        {
+            let mut buffer: Vec<u8> = vec![];
+            reader
+                .read_to_end(&mut buffer)
+                .await
+                .map_err(TypstAssetError::Io)?;
+            let cursor = Cursor::new(buffer);
+            let zip = zip::ZipArchive::new(cursor).map_err(TypstAssetError::Zip)?;
+            let resolver = StructuredInMemoryTemplate::from_zip(zip)?;
+            Ok(TypstZip(resolver))
+        } else if load_context
+            .path()
+            .extension()
+            .is_some_and(|ext| ext == "typ")
+        {
+            // Standalone file.
+            if cfg!(not(any(
+                feature = "typst-asset-fonts",
+                feature = "typst-search-system-fonts"
+            ))) {
+                bevy_log::warn!(
+                    "[TYPST WARNING] Standalone typst file being loaded without either of the 'typst-asset-fonts' or 'typst-search-system-fonts' features enabled. Compilation may fail if text is output is displayed."
+                );
+            }
+            let mut buffer = String::new();
+            reader
+                .read_to_string(&mut buffer)
+                .await
+                .map_err(TypstAssetError::Io)?;
+            Ok(TypstZip(StructuredInMemoryTemplate {
+                loaded_main: buffer,
+                ..Default::default()
+            }))
+        } else {
+            Err(TypstAssetError::UnsupportedFormat)
+        }
     }
 }

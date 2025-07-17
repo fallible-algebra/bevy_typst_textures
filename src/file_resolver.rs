@@ -22,7 +22,7 @@ pub enum FilePreloaderError {
     NoMainDotTyp,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct StructuredInMemoryTemplate {
     pub loaded_toml: BevyTypstDotToml,
     pub loaded_fonts: Vec<typst::text::Font>,

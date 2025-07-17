@@ -49,3 +49,7 @@ async-channel = "2.5"
 
 [dev-dependencies]
 bevy = "0.16"
+
+# Remember to also run examples on web with `RUSTFLAGS='--cfg getrandom_backend="wasm_js"'` before your run command.
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+getrandom = { version = "0.3", features = ["wasm_js"] }

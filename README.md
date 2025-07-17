@@ -56,7 +56,7 @@ The archive unzipping is a bit fragile right now. Lots of `unwrap`s and assumpti
 
 ## Cargo Features
 
-All these features are pass-through features to `typst-as-lib` features, except for `packages` which is both a passthrough *and* enables package fetching for all typst templates you load.
+All these features are pass-through features to `typst-as-lib` features.
 
 - `packages`: Enable access to Universe packages. Package fetching is blocking, doesn't work on web, and relies on you also enabling one of the following:
     - `typst-resolve-ureq`: Use `ureq` to resolve packages.
@@ -66,7 +66,7 @@ All these features are pass-through features to `typst-as-lib` features, except 
 
 ## Running on Web
 
-Remember to set a web-compatible backend for `getrandom` when building for web. I.e. using the bevy cli: `RUSTFLAGS='--cfg getrandom_backend="wasm_js"' bevy run web`.
+Remember to set appropriate [`getrandom` build configuration](https://docs.rs/getrandom/0.3.3/#webassembly-support) if you try to run this on web.
 
 ## Why not [`Velyst`](https://github.com/voxell-tech/velyst)?
 

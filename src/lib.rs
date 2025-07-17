@@ -52,17 +52,13 @@
 //!
 //! ## Cargo Features
 //!
-//! All these features are pass-through features to `typst-as-lib` features, except for `packages` which is both a passthrough *and* enables package fetching for all typst templates you load.
+//! All these features are pass-through features to `typst-as-lib` features.
 //!
 //! - `packages`: Enable access to Universe packages. Package fetching is blocking, doesn't work on web, and relies on you also enabling one of the following:
 //!     - `typst-resolve-ureq`: Use `ureq` to resolve packages.
 //!     - `typst-resolve-reqwest`: Use `reqwest` to resolve packages.
 //! - `typst-search-system-fonts`: Allow access to system fonts from Typst.
 //! - `typst-asset-fonts`: Embed the "default" fonts of typst, embedding them directly in the program's executable.
-//!
-//! ## Running on Web
-//!
-//! Remember to set a web-compatible backend for `getrandom` when building for web. I.e. using the bevy cli: `RUSTFLAGS='--cfg getrandom_backend="wasm_js"' bevy run web`.
 
 use std::{
     collections::{HashMap, VecDeque},

@@ -10,6 +10,7 @@ homepage = "https://github.com/fallible-algebra/bevy_typst_textures"
 repository = "https://github.com/fallible-algebra/bevy_typst_textures"
 readme = "README.md"
 build = "build.rs"
+authors = ["Fallible Things"]
 
 [features]
 default = ["typst-asset-fonts"]

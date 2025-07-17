@@ -26,7 +26,7 @@
 //!
 //! ## Expected structure for Typst Assets
 //!
-//! Standalone `.typ` files can be loaded, but they will not have access to the bevy `asset/` folder and if you want to display text then either `typst-search-system-fonts` or `typst-asset-fonts` features must be enabled.
+//! Standalone `.typ` files can be loaded, but they will not have access to the bevy `asset/` folder or any other .typ files and if you want to display text then either the `typst-search-system-fonts` or `typst-asset-fonts` features must be enabled.
 //!
 //! For complex typst projects that need access to guaranteed, specific fonts as well as other assets, you'll need to create a **`.zip`** archive containing:
 //! 1. a **`main.typ`** file.
@@ -256,13 +256,17 @@ impl TypstTextureServer {
     }
 
     /// Add a typst job to the queue, returning a [`Handle<Image>`] immediately while the
-    /// compilation and rasterization happens later.
+    /// compilation and rasterization happens later. A valid asset is either a .zip archive 
+    /// that follows the structure set out at the root of this crate or a standalone .typ 
+    /// file with no non-sys imports.
     pub fn add_job(&mut self, path: impl Into<PathBuf>, options: TypstJobOptions) -> Handle<Image> {
         self.add_job_with_input(path, serde_json::Value::Object(Map::new()), options)
     }
 
     /// Add a typst job to the queue, with `input` being some type to be converted to the
-    /// `Dict` accessible via `#import sys : inputs` in the typst project.
+    /// `Dict` accessible via `#import sys : inputs` in the typst project. A valid asset is
+    /// either a .zip archive that follows the structure set out at the root of this crate 
+    /// or a standalone .typ file with no non-sys imports.
     pub fn add_job_with_input(
         &mut self,
         path: impl Into<PathBuf>,

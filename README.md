@@ -30,7 +30,7 @@ fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
 
 ## Expected structure for Typst Assets
 
-Standalone `.typ` files can be loaded, but they will not have access to the bevy `asset/` folder and if you want to display text then either `typst-search-system-fonts` or `typst-asset-fonts` features must be enabled.
+Standalone `.typ` files can be loaded, but they will not have access to the bevy `asset/` folder or any other .typ files and if you want to display text then either the `typst-search-system-fonts` or `typst-asset-fonts` features must be enabled.
 
 For complex typst projects that need access to guaranteed, specific fonts as well as other assets, you'll need to create a **`.zip`** archive containing:
 1. a **`main.typ`** file.

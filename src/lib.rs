@@ -21,16 +21,21 @@ use crate::asset_loading::{TypstTextureAssetsPlugin, TypstZip};
 pub mod asset_loading;
 pub mod file_resolver;
 
-pub struct TypstTexturesPlugin;
+#[derive(Debug, Clone, Resource, Default)]
+pub struct TypstTexturesPlugin {
+    pub jobs_per_frame: Option<u32>,
+}
 
 impl Plugin for TypstTexturesPlugin {
     fn build(&self, app: &mut bevy_app::App) {
         app.add_plugins(TypstTextureAssetsPlugin);
-        app.add_systems(PreStartup, TypstTemplateServer::insert_to_world)
-            .add_systems(Update, TypstTemplateServer::do_jobs);
+        app.insert_resource(self.clone());
+        app.add_systems(PreStartup, TypstTextureServer::insert_to_world)
+            .add_systems(Update, TypstTextureServer::do_jobs);
     }
 }
 
+/// The data needed to complete a Typst job.
 #[derive(Debug)]
 pub struct TypstJob {
     pub use_template: Handle<TypstZip>,
@@ -58,7 +63,7 @@ impl Default for TypstJobOptions {
 }
 
 #[derive(Debug, Resource)]
-pub struct TypstTemplateServer {
+pub struct TypstTextureServer {
     asset_server: AssetServer,
     pub fallback: Image,
     pub templates: HashMap<PathBuf, Handle<TypstZip>>,
@@ -66,13 +71,20 @@ pub struct TypstTemplateServer {
     pub jobs_per_frame: Option<u32>,
 }
 
-impl TypstTemplateServer {
-    pub(crate) fn insert_to_world(mut commands: Commands, asset_server: Res<AssetServer>) {
-        commands.insert_resource(Self::new(asset_server.clone()));
+impl TypstTextureServer {
+    pub(crate) fn insert_to_world(
+        mut commands: Commands,
+        asset_server: Res<AssetServer>,
+        plugin_settings: Res<TypstTexturesPlugin>,
+    ) {
+        let mut typst_template_server = Self::new(asset_server.clone());
+        typst_template_server.jobs_per_frame = plugin_settings.jobs_per_frame;
+        commands.remove_resource::<TypstTexturesPlugin>();
+        commands.insert_resource(typst_template_server);
     }
 
     pub fn do_jobs(
-        mut template_server: ResMut<TypstTemplateServer>,
+        mut template_server: ResMut<TypstTextureServer>,
         templates: Res<Assets<TypstZip>>,
     ) {
         let max_jobs = template_server
@@ -155,7 +167,7 @@ impl TypstTemplateServer {
             fallback,
             templates: HashMap::new(),
             jobs: VecDeque::new(),
-            jobs_per_frame: Some(2),
+            jobs_per_frame: None,
         }
     }
 

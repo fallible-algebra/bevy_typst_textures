@@ -10,6 +10,8 @@
 
 #import sys : inputs
 
+// This uses the bundled font, but if you want to use the "default" fonts
+// included by typst then set the "typst-asset-fonts" feature.
 #set text(fill: white, font: "Atkinson Hyperlegible Next", size: 25pt)
 
 #rect(fill: gradient.conic(..color.map.rainbow), width: 100%, height: 100%)

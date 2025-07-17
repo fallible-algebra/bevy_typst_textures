@@ -1,10 +1,10 @@
 [package]
 name = "bevy_typst_textures"
-version = "0.0.1"
+version = "0.0.0"
 edition = "2024"
-license = "MIT"
+license = "MIT OR Apache-2.0"
 description = ""
-keywords = ["bevy", "asset", "typst", "game development", ""]
+keywords = ["bevy", "asset", "typst", "game development"]
 categories = ["game-development"]
 homepage = "https://github.com/fallible-algebra/bevy_typst_textures"
 repository = "https://github.com/fallible-algebra/bevy_typst_textures"
@@ -14,6 +14,8 @@ build = "build.rs"
 [features]
 typst-resolve-ureq = ["typst-as-lib/ureq"]
 typst-resolve-reqwest = ["typst-as-lib/reqwest"]
+typst-asset-fonts = ["typst-as-lib/typst-kit-embed-fonts", "typst-as-lib/typst-kit-fonts"]
+typst-search-system-fonts = ["typst-as-lib/typst-kit-fonts"]
 packages = ["typst-as-lib/packages"]
 
 [dependencies]

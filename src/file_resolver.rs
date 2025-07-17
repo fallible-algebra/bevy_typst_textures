@@ -12,6 +12,8 @@ use typst::syntax::{FileId, Source, VirtualPath};
 use crate::asset_loading::TypstAssetError;
 
 use serde::{Deserialize, Serialize};
+#[cfg(any(feature = "typst-asset-fonts", feature = "typst-search-system-fonts",))]
+use typst_as_lib::typst_kit_options::TypstKitFontOptions;
 
 pub struct ArchiveFileResolver<T> {
     pub archive: T,
@@ -48,6 +50,17 @@ impl StructuredInMemoryTemplate {
             any(feature = "typst-resolve-ureq", feature = "typst-resolve-reqwest")
         ))]
         let engine = engine.with_package_file_resolver();
+        #[cfg(feature = "typst-asset-fonts")]
+        let engine = engine.search_fonts_with(
+            TypstKitFontOptions::default()
+                .include_system_fonts(cfg!(feature = "typst-search-system-fonts")),
+        );
+        #[cfg(all(
+            feature = "typst-search-system-fonts",
+            not(feature = "typst-asset-fonts")
+        ))]
+        let engine =
+            engine.search_fonts_with(TypstKitFontOptions::default().include_system_fonts(true));
         let engine = engine.build();
         (engine, self.loaded_toml)
     }

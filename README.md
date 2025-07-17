@@ -1,10 +1,31 @@
 # bevy_typst_textures
 
+[![](./screenshot.png)](./examples/3d.rs)
+
 A simple `Resource` for generating rasterised textures (`Handle<Image>`) out of structured, zipped typst projects, built on `typst-as-lib`.
 
-This is very limited at this time, as it's mostly developed around my own needs.
+# Example
 
-## Example
+To use this crate, add the `TypstTexturesPlugin` to your bevy app then request textures through `TypstTextureServer`:
+
+```rust
+use bevy_typst_textures::{TypstJobOptions, TypstTextureServer, TypstTexturesPlugin};
+
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, TypstTexturesPlugin::default()))
+        .add_systems(Startup, start)
+        .run();
+}
+
+fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
+    commands.spawn(Camera2d);
+    commands.spawn(Sprite {
+        image: typst_server.add_job("example.zip".into(), TypstJobOptions::default()),
+        ..default()
+    });
+}
+```
 
 ## Expected structure for Typst Assets
 
@@ -29,7 +50,7 @@ This package expects typst assets as zip archives to simplify the asset-fetching
 
 Packages are supported, but not on web. This may change in the future, but for now this does not work.
 
-The archive unzipping is a bit fragile right now, too. Lots of `unwrap`s and assumptions about how different OSs handle zip archives, and some ad-hoc dealing with how they pollute filesystems with metadata.
+The archive unzipping is a bit fragile right now, too. Lots of `unwrap`s and assumptions about how different OSs handle zip archives, and some ad-hoc dealing with how they pollute filesystems with metadata. Because zipping manually is a pain, I'd suggest either setting up something to create zips of your typst assets folders in a `build.rs` script or as part of a watch command on your project.
 
 `add_job_with_data` uses serde to serialize the input data type to json before then de-seralizing it to typst's `Dict` type. This presents the regular `serde` overhead, mostly.
 
@@ -41,4 +62,4 @@ All these features are passthroughs to `typst-as-lib` features, except for `pack
 
 ## Why not [`Velyst`](https://github.com/voxell-tech/velyst)?
 
-This crate sits in the niche of needing rasterised textures rather than full & interactive typst integration.
+This crate sits in the niche of needing rasterised textures rather than full & interactive typst integration. Velyst is much more powerful than this crate, but also exists in a different niche.

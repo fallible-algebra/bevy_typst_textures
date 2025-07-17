@@ -1,16 +1,16 @@
-use bevy::{math::VectorSpace, prelude::*};
-use bevy_typst_textures::{TypstJobOptions, TypstTemplateServer, TypstTexturesPlugin};
+use bevy::prelude::*;
+use bevy_typst_textures::{TypstJobOptions, TypstTextureServer, TypstTexturesPlugin};
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, TypstTexturesPlugin))
+        .add_plugins((DefaultPlugins, TypstTexturesPlugin::default()))
         .add_systems(Startup, start)
         .run();
 }
 
 fn start(
     mut commands: Commands,
-    mut typst_server: ResMut<TypstTemplateServer>,
+    mut typst_server: ResMut<TypstTextureServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -29,7 +29,7 @@ fn start(
         })),
     ));
     commands.insert_resource(AmbientLight {
-        brightness: 500.,
+        brightness: 2000.,
         ..default()
     });
 }

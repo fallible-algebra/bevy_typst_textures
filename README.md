@@ -1,5 +1,4 @@
 # bevy_typst_textures
-
 [![](./screenshot.png)](./examples/default_fonts_3d.rs)
 
 A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of either standalone .typ files or structured, zipped typst projects, built on `typst-as-lib`.

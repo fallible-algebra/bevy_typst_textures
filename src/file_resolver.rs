@@ -1,6 +1,7 @@
 use derive_more::*;
 use std::{
     collections::BTreeMap,
+    ffi::os_str::Display,
     io::{Read, Seek},
     path::PathBuf,
 };
@@ -15,11 +16,21 @@ use serde::{Deserialize, Serialize};
 #[cfg(any(feature = "typst-asset-fonts", feature = "typst-search-system-fonts",))]
 use typst_as_lib::typst_kit_options::TypstKitFontOptions;
 
-#[derive(Debug, Error, Display)]
+#[derive(Debug, Error)]
 pub enum FilePreloaderError {
     NoPackageDotToml,
     MalformedPackageToml,
     NoMainDotTyp,
+}
+
+impl std::fmt::Display for FilePreloaderError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FilePreloaderError::NoPackageDotToml => write!(f, "No 'package.toml' file"),
+            FilePreloaderError::MalformedPackageToml => write!(f, "Malformed 'package.toml' file"),
+            FilePreloaderError::NoMainDotTyp => write!(f, "No 'main.typ' file"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default)]

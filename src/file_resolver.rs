@@ -1,7 +1,6 @@
 use derive_more::*;
 use std::{
     collections::BTreeMap,
-    ffi::os_str::Display,
     io::{Read, Seek},
     path::PathBuf,
 };

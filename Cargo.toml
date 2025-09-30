@@ -21,13 +21,13 @@ typst-asset-fonts = ["typst-as-lib/typst-kit-embed-fonts", "typst-as-lib/typst-k
 typst-search-system-fonts = ["typst-as-lib/typst-kit-fonts"]
 
 [dependencies]
-bevy_ecs = "0.17.0-rc.2"
-bevy_asset = "0.17.0-rc.2"
-bevy_app = "0.17.0-rc.2"
-bevy_reflect = "0.17.0-rc.2"
-bevy_image = "0.17.0-rc.2"
-bevy_log = "0.17.0-rc.2"
-bevy_tasks = "0.17.0-rc.2"
+bevy_ecs = "0.17"
+bevy_asset = "0.17"
+bevy_app = "0.17"
+bevy_reflect = "0.17"
+bevy_image = "0.17"
+bevy_log = "0.17"
+bevy_tasks = "0.17"
 typst-as-lib = {version = "=0.14.4"}
 # typst-as-lib = {git = "https://github.com/fallible-algebra/typst-as-lib-fork"}
 typst = "0.13.1"
@@ -50,7 +50,7 @@ tiny-skia = "0.11"
 async-channel = "2.5"
 
 [dev-dependencies]
-bevy = "0.17.0-rc.2"
+bevy = "0.17"
 
 # Remember to also run examples on web with `RUSTFLAGS='--cfg getrandom_backend="wasm_js"'`.
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

@@ -87,6 +87,13 @@ Planned features:
 - Optionally rasterize multi-page output to a texture atlas.
 - Trim down dependencies, or at least feature gate more of them.
 
+## Versions
+
+|`bevy_typst_textures`|Typst|Bevy|
+|-|-|-|
+|0.2.0|0.13|0.17|
+|0.1.1|0.13|0.16|
+
 ## Licence
 
 This is published under a dual MIT & Apache 2.0 licence, as is generally kosher for the bevy ecosystem.

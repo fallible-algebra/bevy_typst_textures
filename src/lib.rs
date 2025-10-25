@@ -65,7 +65,9 @@
 
 use std::{
     collections::{HashMap, VecDeque},
-    path::PathBuf,
+    ffi::OsStr,
+    path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use bevy_app::{Last, Plugin, PreStartup};
@@ -78,10 +80,17 @@ use bevy_image::Image;
 use bevy_tasks::AsyncComputeTaskPool;
 use serde::Serialize;
 use serde_json::{Map, value::Serializer};
-use typst::{diag::Severity, foundations::Dict, layout::PagedDocument};
+use typst::{
+    diag::Severity,
+    foundations::{Dict, IntoValue},
+    layout::PagedDocument,
+};
 use wgpu_types::{Extent3d, TextureDimension, TextureFormat};
 
-use crate::asset_loading::{AssetPluginForTypstTextures, TypstTemplate};
+use crate::{
+    asset_loading::{AssetPluginForTypstTextures, TypstTemplate},
+    file_resolver::StructuredInMemoryTemplate,
+};
 
 pub mod asset_loading;
 pub mod file_resolver;
@@ -113,6 +122,18 @@ pub struct TypstJob {
     _handle: Handle<Image>,
 }
 
+#[derive(Debug, Default, Clone)]
+pub enum InputUnifyMode {
+    #[default]
+    SerdeOverridesDict,
+    DictOverridesSerde,
+    /// Create a new Dict with the serde and dict inputs placed in sub-dictionaries under the given keys.
+    SeparateKeys {
+        serde_key: String,
+        dict_key: String,
+    },
+}
+
 /// Options for the typst job.
 #[derive(Debug, Clone)]
 pub struct TypstJobOptions {
@@ -122,6 +143,7 @@ pub struct TypstJobOptions {
     pub specific_page: Option<usize>,
     /// Options to pass to [`Image::asset_usage`], defaults to RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD.
     pub asset_usage: RenderAssetUsages,
+    pub input_unify_mode: InputUnifyMode,
 }
 
 impl Default for TypstJobOptions {
@@ -130,11 +152,12 @@ impl Default for TypstJobOptions {
             pixels_per_pt: 1.0,
             specific_page: None,
             asset_usage: RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
+            input_unify_mode: InputUnifyMode::default(),
         }
     }
 }
 
-/// Resource to access in systems under `ResMut<TypstTextureServer>` to queue typst jobs. [`TypstTextureServer::add_job`] and [`TypstTextureServer::add_job_with_input`]
+/// Resource to access in systems under `ResMut<TypstTextureServer>` to queue typst jobs. [`TypstTextureServer::add_job`] and [`TypstTextureServer::add_job_with_serde_input`]
 #[derive(Debug, Resource)]
 pub struct TypstTextureServer {
     asset_server: AssetServer,
@@ -259,26 +282,38 @@ impl TypstTextureServer {
     /// compilation and rasterization happens later. A valid asset is either a .zip archive
     /// that follows the structure set out at the root of this crate or a standalone .typ
     /// file with no non-sys imports.
-    pub fn add_job(&mut self, path: impl Into<PathBuf>, options: TypstJobOptions) -> Handle<Image> {
-        self.add_job_with_input(path, serde_json::Value::Object(Map::new()), options)
+    pub fn add_job(
+        &mut self,
+        path: impl Into<PathBufOrTemplate>,
+        options: TypstJobOptions,
+    ) -> Handle<Image> {
+        self.add_job_with_dict_input(path, Dict::default(), options)
     }
 
-    /// Add a typst job to the queue, with `input` being some type to be converted to the
-    /// `Dict` accessible via `#import sys : inputs` in the typst project. A valid asset is
-    /// either a .zip archive that follows the structure set out at the root of this crate
-    /// or a standalone .typ file with no non-sys imports.
-    pub fn add_job_with_input(
+    /// Add a typst job to the queue, as per [`TypstTextureServer::add_job`], but with a dictionary as input,
+    /// available in the typst program as
+    pub fn add_job_with_dict_input(
         &mut self,
-        path: impl Into<PathBuf>,
-        input: impl Serialize,
+        path: impl Into<PathBufOrTemplate>,
+        input: impl Into<Dict>,
         options: TypstJobOptions,
     ) -> Handle<Image> {
         let asset_server = self.asset_server.clone();
-        let path_buf = path.into();
-        let template = self
-            .templates
-            .entry(path_buf.clone())
-            .or_insert_with(|| asset_server.load(path_buf));
+        let path_or_template: PathBufOrTemplate = path.into();
+        let template = match path_or_template {
+            PathBufOrTemplate::PathBuf(path_buf) => self
+                .templates
+                .entry(path_buf.clone())
+                .or_insert_with(|| asset_server.load(path_buf))
+                .clone(),
+            PathBufOrTemplate::NewTemplate(structured_in_memory_template) => self
+                .templates
+                .entry(structured_in_memory_template.path_given.clone())
+                .insert_entry(asset_server.add(TypstTemplate(structured_in_memory_template)))
+                .get()
+                .clone(),
+            PathBufOrTemplate::ExistingTemplate(handle) => handle,
+        };
         let (sender, receiver) = async_channel::unbounded::<bevy_image::Image>();
         let handle: Handle<Image> = self.asset_server.add_async(async move {
             let res = receiver.recv().await;
@@ -287,24 +322,81 @@ impl TypstTextureServer {
             }
             res
         });
-        let Ok(input): Result<serde_json::Value, _> = input.serialize(Serializer) else {
-            bevy_log::error!(
-                "[TYPST INPUT ERROR] Could not transform value into a serde json as interim for Dict."
-            );
-            return handle;
-        };
-        let Ok(input) = serde_json::from_value(input) else {
-            bevy_log::error!("[TYPST INPUT ERROR] Could not get Dict from interim serde json.");
-            return handle;
-        };
         self.jobs.push_back(TypstJob {
             use_template: template.clone(),
-            input,
+            input: input.into(),
             send_target: sender,
             job_options: options,
             _handle: handle.clone(),
         });
         handle
+    }
+
+    /// Add a typst job to the queue, with both a Serde and Dict input type, unified together as a single dict.
+    /// If your inputs share any keys, be sure to understand which [`InputUnifyMode`] is relevant to what you want, the default being [`InputUnifyMode::SerdeOverridesDict`].
+    pub fn add_job_with_dict_and_serde_input(
+        &mut self,
+        path: impl Into<PathBufOrTemplate>,
+        input_serde: impl Serialize,
+        input_dict: impl Into<Dict>,
+        options: TypstJobOptions,
+    ) -> Handle<Image> {
+        let Ok(serde_input): Result<serde_json::Value, _> = input_serde.serialize(Serializer)
+        else {
+            bevy_log::error!(
+                "[TYPST INPUT ERROR] Could not transform value into a serde json as interim for Dict."
+            );
+            return self.add_job_with_dict_input(path, input_dict, options);
+        };
+        let Ok(mut input_serde_dict): Result<Dict, _> = serde_json::from_value(serde_input) else {
+            bevy_log::error!("[TYPST INPUT ERROR] Could not get Dict from interim serde json.");
+            return self.add_job_with_dict_input(path, input_dict, options);
+        };
+        let mut input_dict: Dict = input_dict.into();
+        let input_unified = match options.input_unify_mode.clone() {
+            InputUnifyMode::SerdeOverridesDict => {
+                for (key, value) in input_serde_dict {
+                    input_dict.insert(key, value);
+                }
+                input_dict
+            }
+            InputUnifyMode::DictOverridesSerde => {
+                for (key, value) in input_dict {
+                    input_serde_dict.insert(key, value);
+                }
+                input_serde_dict
+            }
+            InputUnifyMode::SeparateKeys {
+                serde_key,
+                dict_key,
+            } => {
+                let mut dict = Dict::new();
+                dict.insert(serde_key.into(), input_serde_dict.into_value());
+                dict.insert(dict_key.into(), input_dict.into_value());
+                dict
+            }
+        };
+        self.add_job_with_dict_input(path, input_unified, options)
+    }
+
+    /// Add a typst job to the queue with input, as per [`TypstTextureServer::add_job_with_dict_input`],
+    /// but with the input generated from a serde serializable type.
+    /// This method overrides the `input_unify_mode` of your job options, setting it to [`InputUnifyMode::SerdeOverridesDict`].
+    pub fn add_job_with_serde_input(
+        &mut self,
+        path: impl Into<PathBufOrTemplate>,
+        input: impl Serialize,
+        options: TypstJobOptions,
+    ) -> Handle<Image> {
+        self.add_job_with_dict_and_serde_input(
+            path,
+            input,
+            Dict::default(),
+            TypstJobOptions {
+                input_unify_mode: InputUnifyMode::SerdeOverridesDict,
+                ..options
+            },
+        )
     }
 
     pub fn limit_jobs(mut self, limit: u32) -> Self {
@@ -315,5 +407,58 @@ impl TypstTextureServer {
     pub fn unlimited_jobs(mut self) -> Self {
         self.jobs_per_frame = None;
         self
+    }
+}
+
+/// A valid input to
+#[derive(Debug)]
+pub enum PathBufOrTemplate {
+    PathBuf(PathBuf),
+    /// When passing a new template as input, be sure that your `path_given` is unique.
+    /// This is used as the key for the template server, so if you keep it blank then it
+    /// could be overridden.
+    NewTemplate(StructuredInMemoryTemplate),
+    ExistingTemplate(Handle<TypstTemplate>),
+}
+
+impl From<PathBuf> for PathBufOrTemplate {
+    fn from(value: PathBuf) -> Self {
+        Self::PathBuf(value)
+    }
+}
+
+impl From<&str> for PathBufOrTemplate {
+    fn from(value: &str) -> Self {
+        Self::PathBuf(value.into())
+    }
+}
+
+impl From<String> for PathBufOrTemplate {
+    fn from(value: String) -> Self {
+        Self::PathBuf(value.into())
+    }
+}
+
+impl From<&Path> for PathBufOrTemplate {
+    fn from(value: &Path) -> Self {
+        Self::PathBuf(value.into())
+    }
+}
+
+impl From<&OsStr> for PathBufOrTemplate {
+    fn from(value: &OsStr) -> Self {
+        Self::PathBuf(value.into())
+    }
+}
+
+impl From<StructuredInMemoryTemplate> for PathBufOrTemplate {
+    fn from(value: StructuredInMemoryTemplate) -> Self {
+        Self::NewTemplate(value)
+    }
+}
+
+impl From<Handle<TypstTemplate>> for PathBufOrTemplate {
+    fn from(value: Handle<TypstTemplate>) -> Self {
+        PathBufOrTemplate::ExistingTemplate(value)
     }
 }

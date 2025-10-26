@@ -1,6 +1,6 @@
 [package]
 name = "bevy_typst_textures"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "A simple Resource for generating rasterized textures out of either standalone .typ files or structured, zipped typst projects, built on typst-as-lib."
@@ -13,7 +13,7 @@ build = "build.rs"
 authors = ["Fallible Things"]
 
 [features]
-default = ["typst-asset-fonts", "serde_as_dict"]
+default = ["typst-asset-fonts"]
 typst-packages = ["typst-as-lib/packages"]
 typst-resolve-ureq = ["typst-as-lib/ureq"]
 typst-resolve-reqwest = ["typst-as-lib/reqwest"]

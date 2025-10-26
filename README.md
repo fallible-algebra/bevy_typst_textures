@@ -26,6 +26,10 @@ fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
         image: typst_server.add_job("my_zip_in_the_asset_folder.zip".into(), TypstJobOptions::default()),
         ..default()
     });
+    commands.spawn(Sprite {
+        image: typst_server.add_job_with_dict_input("my_zip_in_the_asset_folder.zip".into(), typst::foundations::Dict::new(), TypstJobOptions::default()),
+        ..default()
+    });
 }
 ```
 
@@ -55,8 +59,6 @@ This package expects typst assets as zip archives to simplify the asset-fetching
 Packages are supported, but not on web. This may change in the future, but for now this does not work.
 
 The archive unzipping is a bit fragile right now. Lots of `unwrap`s and assumptions about how different OSs handle zip archives, and some ad-hoc dealing with how they pollute filesystems with metadata (`__MACOS/` delenda est). Because zipping manually is a pain, I'd suggest setting up something to create zips of your typst assets folders in a `build.rs` script or as part of a watch command on your project.
-
-`add_job_with_data` uses serde to serialize the input data type to json before then de-seralizing it to typst's `Dict` type. This presents the regular `serde` overhead, mostly.
 
 ## Cargo Features
 
@@ -91,6 +93,7 @@ Planned features:
 
 |`bevy_typst_textures`|Typst|Bevy|
 |-|-|-|
+|0.3.0|0.14|0.17|
 |0.2.0|0.13|0.17|
 |0.1.1|0.13|0.16|
 

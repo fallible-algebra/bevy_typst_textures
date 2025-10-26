@@ -18,7 +18,11 @@
 //! fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
 //!     commands.spawn(Camera2d);
 //!     commands.spawn(Sprite {
-//!         image: typst_server.add_job("my_zip_in_the_asset_folder.zip", TypstJobOptions::default()),
+//!         image: typst_server.add_job("my_zip_in_the_asset_folder.zip".into(), TypstJobOptions::default()),
+//!         ..default()
+//!     });
+//!     commands.spawn(Sprite {
+//!         image: typst_server.add_job_with_dict_input("my_zip_in_the_asset_folder.zip".into(), typst::foundations::Dict::new(), TypstJobOptions::default()),
 //!         ..default()
 //!     });
 //! }
@@ -63,13 +67,6 @@
 //! - `typst-search-system-fonts`: Allow access to system fonts from Typst.
 //! - `typst-asset-fonts`: Embed the "default" fonts of typst, embedding them directly in the program's executable.
 
-use std::{
-    collections::{HashMap, VecDeque},
-    ffi::OsStr,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
-
 use bevy_app::{Last, Plugin, PreStartup};
 use bevy_asset::{AssetServer, Assets, Handle, RenderAssetUsages};
 use bevy_ecs::{
@@ -79,7 +76,12 @@ use bevy_ecs::{
 use bevy_image::Image;
 use bevy_tasks::AsyncComputeTaskPool;
 use serde::Serialize;
-use serde_json::{Map, value::Serializer};
+use serde_json::value::Serializer;
+use std::{
+    collections::{HashMap, VecDeque},
+    ffi::OsStr,
+    path::{Path, PathBuf},
+};
 use typst::{
     diag::Severity,
     foundations::{Dict, IntoValue},
@@ -122,6 +124,7 @@ pub struct TypstJob {
     _handle: Handle<Image>,
 }
 
+/// Strategies for unifying keys when calling [`TypstTextureServer::add_job_with_dict_and_serde_input`].
 #[derive(Debug, Default, Clone)]
 pub enum InputUnifyMode {
     #[default]
@@ -157,7 +160,7 @@ impl Default for TypstJobOptions {
     }
 }
 
-/// Resource to access in systems under `ResMut<TypstTextureServer>` to queue typst jobs. [`TypstTextureServer::add_job`] and [`TypstTextureServer::add_job_with_serde_input`]
+/// Resource to access in systems under `ResMut<TypstTextureServer>` to queue typst jobs. [`TypstTextureServer::add_job`] and [`TypstTextureServer::add_job_with_serde_input`].
 #[derive(Debug, Resource)]
 pub struct TypstTextureServer {
     asset_server: AssetServer,
@@ -291,7 +294,7 @@ impl TypstTextureServer {
     }
 
     /// Add a typst job to the queue, as per [`TypstTextureServer::add_job`], but with a dictionary as input,
-    /// available in the typst program as
+    /// available in the typst program under the `#import sys : inputs` dict.
     pub fn add_job_with_dict_input(
         &mut self,
         path: impl Into<PathBufOrTemplate>,
@@ -410,14 +413,17 @@ impl TypstTextureServer {
     }
 }
 
-/// A valid input to
+/// The typst asset reference type for the various `add_job` methods of [`TypstTextureServer`].
 #[derive(Debug)]
 pub enum PathBufOrTemplate {
+    /// A path to an on-disk typst asset.
     PathBuf(PathBuf),
+    /// A new but not yet registered template.
     /// When passing a new template as input, be sure that your `path_given` is unique.
-    /// This is used as the key for the template server, so if you keep it blank then it
-    /// could be overridden.
+    /// This is used as the key for the template server, so non-unique `path_given` values
+    /// may lead to templates being overwritten.
     NewTemplate(StructuredInMemoryTemplate),
+    /// An already existing template.
     ExistingTemplate(Handle<TypstTemplate>),
 }
 

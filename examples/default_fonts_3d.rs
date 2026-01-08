@@ -34,7 +34,7 @@ fn start(
             ..default()
         })),
     ));
-    commands.insert_resource(AmbientLight {
+    commands.insert_resource(GlobalAmbientLight {
         brightness: 2000.,
         ..default()
     });

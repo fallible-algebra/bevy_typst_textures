@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use bevy_typst_textures::{file_resolver::StructuredInMemoryTemplate, TypstJobOptions, TypstTextureServer, TypstTexturesPlugin};
+use bevy_typst_textures::{
+    TypstJobOptions, TypstTextureServer, TypstTexturesPlugin,
+    file_resolver::StructuredInMemoryTemplate,
+};
 
 fn main() {
     App::new()
@@ -11,14 +14,17 @@ fn main() {
 fn start(mut commands: Commands, mut typst_server: ResMut<TypstTextureServer>) {
     commands.spawn(Camera2d);
     commands.spawn(Sprite {
-        image: typst_server.add_job(StructuredInMemoryTemplate {
-            loaded_toml: Default::default(),
-            loaded_fonts: Default::default(),
-            loaded_main: MAIN_DOT_TYP.to_string(),
-            path_given: "manually_defined".into(),
-            file_resolver: Default::default(),
-            source_resolver: Default::default(),
-        }, TypstJobOptions::default()),
+        image: typst_server.add_job(
+            StructuredInMemoryTemplate {
+                loaded_toml: Default::default(),
+                loaded_fonts: Default::default(),
+                loaded_main: MAIN_DOT_TYP.to_string(),
+                path_given: "manually_defined".into(),
+                file_resolver: Default::default(),
+                source_resolver: Default::default(),
+            },
+            TypstJobOptions::default(),
+        ),
         ..default()
     });
 }

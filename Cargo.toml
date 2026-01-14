@@ -1,6 +1,6 @@
 [package]
 name = "bevy_typst_textures"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "A simple Resource for generating rasterized textures out of either standalone .typ files or structured, zipped typst projects, built on typst-as-lib."
@@ -21,13 +21,13 @@ typst-asset-fonts = ["typst-as-lib/typst-kit-embed-fonts", "typst-as-lib/typst-k
 typst-search-system-fonts = ["typst-as-lib/typst-kit-fonts"]
 
 [dependencies]
-bevy_ecs = "0.18.0-rc.2"
-bevy_asset = "0.18.0-rc.2"
-bevy_app = "0.18.0-rc.2"
-bevy_reflect = "0.18.0-rc.2"
-bevy_image = "0.18.0-rc.2"
-bevy_log = "0.18.0-rc.2"
-bevy_tasks = "0.18.0-rc.2"
+bevy_ecs = "0.18.0"
+bevy_asset = "0.18.0"
+bevy_app = "0.18.0"
+bevy_reflect = "0.18.0"
+bevy_image = "0.18.0"
+bevy_log = "0.18.0"
+bevy_tasks = "0.18.0"
 typst-as-lib = {version = "0.15"}
 # extra listings as easy reference while updating
 # typst-as-lib = {git = "https://github.com/fallible-algebra/typst-as-lib-fork"}
@@ -52,7 +52,7 @@ tiny-skia = "0.11"
 async-channel = "2.5"
 
 [dev-dependencies]
-bevy = "0.18.0-rc.2"
+bevy = "0.18.0"
 
 # Remember to also run examples on web with `RUSTFLAGS='--cfg getrandom_backend="wasm_js"'`.
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

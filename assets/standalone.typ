@@ -8,8 +8,8 @@
 
 #place(center + horizon)[
   Hello Typst!
-  
-  $ f : A -> B, g: B -> C\
-  f compose g : A -> C$
+
+  $f : A -> B, g: B -> C\
+  g compose f : A -> C$
   #square(fill: gradient.conic(..color.map.rainbow))
 ]

@@ -8,7 +8,7 @@
   margin: 0pt,
 )
 
-#import sys : inputs
+#import sys: inputs
 
 // This uses the bundled font, but if you want to use the "default" fonts
 // included by typst then set the "typst-asset-fonts" feature.

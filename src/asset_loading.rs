@@ -15,7 +15,7 @@ impl Plugin for AssetPluginForTypstTextures {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, TypePath)]
 pub struct TypstZipLoader;
 
 #[non_exhaustive]
@@ -63,7 +63,7 @@ impl AssetLoader for TypstZipLoader {
     ) -> std::result::Result<Self::Asset, Self::Error> {
         if load_context
             .path()
-            .extension()
+            .get_full_extension()
             .is_some_and(|ext| ext == "zip")
         {
             let mut buffer: Vec<u8> = vec![];
@@ -77,7 +77,7 @@ impl AssetLoader for TypstZipLoader {
             Ok(TypstTemplate(resolver))
         } else if load_context
             .path()
-            .extension()
+            .get_full_extension()
             .is_some_and(|ext| ext == "typ")
         {
             // Standalone file.

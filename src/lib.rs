@@ -124,45 +124,42 @@ impl TypstTextureServer {
             .jobs_per_frame
             .unwrap_or(template_server.jobs.len() as u32);
         let mut jobs_done = 0;
-        let mut compiled_map = HashMap::new();
         while jobs_done < max_jobs
             && let Some(job) = template_server.jobs.pop_front()
         {
             if template_server.asset_server.is_loaded(&job.use_template)
                 && let Some(template) = templates.get(&job.use_template)
             {
-                let (engine, _) = compiled_map
-                    .entry(job.use_template.clone())
-                    .or_insert_with(|| template.0.clone().to_engine());
-                let compiled = engine.compile_with_input::<_, PagedDocument>(job.input);
-                let path = job.use_template.path();
-                let Ok(page) = compiled.output else {
-                    bevy_log::error!(
-                        "[TYPST FATAL ERROR for {:?}] {}",
-                        path,
-                        compiled.output.unwrap_err()
-                    );
-                    continue;
-                };
-                for warning in compiled.warnings {
-                    if warning.severity == Severity::Error {
-                        bevy_log::error!("[TYPST ERROR for {:?}] {}", path, warning.message);
-                    } else {
-                        bevy_log::warn!("[TYPST WARNING for {:?}] {}", path, warning.message);
-                    }
-                }
-                let rendered = typst_render::render(
-                    &page.pages[job
-                        .job_options
-                        .specific_page
-                        .map(|page_num| (page.pages.len().saturating_sub(1)).min(page_num))
-                        .unwrap_or(0)],
-                    job.job_options.pixels_per_pt,
-                );
-                let asset_usage = job.job_options.asset_usage;
-                let sender = job.send_target.clone();
+                let (engine, _) = template.0.clone().to_engine();
                 AsyncComputeTaskPool::get()
-                    .spawn(async move {
+                .spawn(async move {
+                        let compiled = engine.compile_with_input::<_, PagedDocument>(job.input);
+                        let path = job.use_template.path();
+                        let Ok(page) = compiled.output else {
+                            bevy_log::error!(
+                                "[TYPST FATAL ERROR for {:?}] {}",
+                                path,
+                                compiled.output.unwrap_err()
+                            );
+                            return Ok(())
+                        };
+                        for warning in compiled.warnings {
+                            if warning.severity == Severity::Error {
+                                bevy_log::error!("[TYPST ERROR for {:?}] {}", path, warning.message);
+                            } else {
+                                bevy_log::warn!("[TYPST WARNING for {:?}] {}", path, warning.message);
+                            }
+                        }
+                        let rendered = typst_render::render(
+                            &page.pages[job
+                                .job_options
+                                .specific_page
+                                .map(|page_num| (page.pages.len().saturating_sub(1)).min(page_num))
+                                .unwrap_or(0)],
+                            job.job_options.pixels_per_pt,
+                        );
+                        let asset_usage = job.job_options.asset_usage;
+                        let sender = job.send_target.clone();
                         sender
                             .send(bevy_image::Image::new(
                                 Extent3d {

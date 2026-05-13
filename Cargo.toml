@@ -21,13 +21,13 @@ typst-asset-fonts = ["typst-as-lib/typst-kit-embed-fonts", "typst-as-lib/typst-k
 typst-search-system-fonts = ["typst-as-lib/typst-kit-fonts"]
 
 [dependencies]
-bevy_ecs = {git = "https://github.com/bevyengine/bevy", rev = "9b279b3"}
-bevy_asset = {git = "https://github.com/bevyengine/bevy", rev = "9b279b3"}
-bevy_app = {git = "https://github.com/bevyengine/bevy", rev = "9b279b3"}
-bevy_reflect = {git = "https://github.com/bevyengine/bevy", rev = "9b279b3"}
-bevy_image = {git = "https://github.com/bevyengine/bevy", rev = "9b279b3"}
-bevy_log = {git = "https://github.com/bevyengine/bevy", rev = "9b279b3"}
-bevy_tasks = {git = "https://github.com/bevyengine/bevy", rev = "9b279b3"}
+bevy_ecs = {version = "0.19.0-rc.1"}
+bevy_asset = {version = "0.19.0-rc.1"}
+bevy_app = {version = "0.19.0-rc.1"}
+bevy_reflect = {version = "0.19.0-rc.1"}
+bevy_image = {version = "0.19.0-rc.1"}
+bevy_log = {version = "0.19.0-rc.1"}
+bevy_tasks = {version = "0.19.0-rc.1"}
 typst-as-lib = {version = "0.15"}
 # extra listings as easy reference while updating
 # typst-as-lib = {git = "https://github.com/fallible-algebra/typst-as-lib-fork"}
@@ -52,7 +52,7 @@ tiny-skia = "0.11"
 async-channel = "2.5"
 
 [dev-dependencies]
-bevy = {git = "https://github.com/bevyengine/bevy", rev = "9b279b3"}
+bevy = {version = "0.19.0-rc.1"}
 
 # Remember to also run examples on web with `RUSTFLAGS='--cfg getrandom_backend="wasm_js"'`.
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

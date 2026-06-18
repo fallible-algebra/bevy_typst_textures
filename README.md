@@ -93,10 +93,13 @@ Planned features:
 
 |`bevy_typst_textures`|Typst|Bevy||
 |-|-|-|-|
+|0.5.0|0.14|0.19|Bevy update[^bevy019]|
 |0.4.0|0.14|0.18|Bevy update|
 |0.3.0|0.14|0.17|Typst update|
 |0.2.0|0.13|0.17|Bevy update|
 |0.1.1|0.13|0.16|Release|
+
+[^bevy019]: (Yes, Typst 0.15 came out before Bevy 0.19, but I'm more active in Bevy and don't own the `typst-as-lib` library)
 
 ## Licence
 

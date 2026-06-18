@@ -1,6 +1,6 @@
 [package]
 name = "bevy_typst_textures"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "A simple Resource for generating rasterized textures out of either standalone .typ files or structured, zipped typst projects, built on typst-as-lib."
@@ -21,13 +21,13 @@ typst-asset-fonts = ["typst-as-lib/typst-kit-embed-fonts", "typst-as-lib/typst-k
 typst-search-system-fonts = ["typst-as-lib/typst-kit-fonts"]
 
 [dependencies]
-bevy_ecs = {version = "0.19.0-rc.1"}
-bevy_asset = {version = "0.19.0-rc.1"}
-bevy_app = {version = "0.19.0-rc.1"}
-bevy_reflect = {version = "0.19.0-rc.1"}
-bevy_image = {version = "0.19.0-rc.1"}
-bevy_log = {version = "0.19.0-rc.1"}
-bevy_tasks = {version = "0.19.0-rc.1"}
+bevy_ecs = {git = "https://github.com/bevyengine/bevy", rev = "c6f634c"}
+bevy_asset = {git = "https://github.com/bevyengine/bevy", rev = "c6f634c"}
+bevy_app = {git = "https://github.com/bevyengine/bevy", rev = "c6f634c"}
+bevy_reflect = {git = "https://github.com/bevyengine/bevy", rev = "c6f634c"}
+bevy_image = {git = "https://github.com/bevyengine/bevy", rev = "c6f634c"}
+bevy_log = {git = "https://github.com/bevyengine/bevy", rev = "c6f634c"}
+bevy_tasks = {git = "https://github.com/bevyengine/bevy", rev = "c6f634c"}
 typst-as-lib = {version = "0.15"}
 # extra listings as easy reference while updating
 # typst-as-lib = {git = "https://github.com/fallible-algebra/typst-as-lib-fork"}
@@ -52,7 +52,7 @@ tiny-skia = "0.11"
 async-channel = "2.5"
 
 [dev-dependencies]
-bevy = {version = "0.19.0-rc.1"}
+bevy = {git = "https://github.com/bevyengine/bevy", rev = "c6f634c"}
 
 # Remember to also run examples on web with `RUSTFLAGS='--cfg getrandom_backend="wasm_js"'`.
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

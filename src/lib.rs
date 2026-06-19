@@ -132,7 +132,7 @@ impl TypstTextureServer {
             {
                 let (engine, _) = template.0.clone().to_engine();
                 AsyncComputeTaskPool::get()
-                .spawn(async move {
+                    .spawn(async move {
                         let compiled = engine.compile_with_input::<_, PagedDocument>(job.input);
                         let path = job.use_template.path();
                         let Ok(page) = compiled.output else {
@@ -141,13 +141,21 @@ impl TypstTextureServer {
                                 path,
                                 compiled.output.unwrap_err()
                             );
-                            return Ok(())
+                            return Ok(());
                         };
                         for warning in compiled.warnings {
                             if warning.severity == Severity::Error {
-                                bevy_log::error!("[TYPST ERROR for {:?}] {}", path, warning.message);
+                                bevy_log::error!(
+                                    "[TYPST ERROR for {:?}] {}",
+                                    path,
+                                    warning.message
+                                );
                             } else {
-                                bevy_log::warn!("[TYPST WARNING for {:?}] {}", path, warning.message);
+                                bevy_log::warn!(
+                                    "[TYPST WARNING for {:?}] {}",
+                                    path,
+                                    warning.message
+                                );
                             }
                         }
                         let rendered = typst_render::render(

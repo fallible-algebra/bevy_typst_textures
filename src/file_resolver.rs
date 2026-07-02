@@ -7,7 +7,7 @@ use std::{
 use typst_as_lib::{TypstEngine, TypstTemplateMainFile};
 use zip::ZipArchive;
 
-use typst::syntax::{FileId, Source, VirtualPath};
+use typst::syntax::{FileId, RootedPath, Source, VirtualPath};
 
 use crate::asset_loading::TypstAssetError;
 
@@ -99,8 +99,16 @@ impl StructuredInMemoryTemplate {
                             let mut string_buf = String::new();
                             file.read_to_string(&mut string_buf)
                                 .map_err(TypstAssetError::Io)?;
-                            let source =
-                                Source::new(FileId::new(None, VirtualPath::new(path)), string_buf);
+                            let vpath = VirtualPath::new(path.to_str().unwrap())
+                                .map_err(TypstAssetError::PathError)?;
+                            let source = Source::new(
+                                FileId::new(RootedPath::new(
+                                    typst::syntax::VirtualRoot::Project,
+                                    vpath,
+                                )),
+                                string_buf,
+                            );
+                            //    Source::new(FileId::new(None, VirtualPath::new(path)), string_buf);
                             source_resolver.push(source);
                         }
                     }
@@ -127,9 +135,17 @@ impl StructuredInMemoryTemplate {
                         );
                     }
                     _ => {
+                        let vpath = VirtualPath::new(path.to_str().unwrap())
+                            .map_err(TypstAssetError::PathError)?;
                         let mut buf = Vec::new();
                         file.read_to_end(&mut buf).map_err(TypstAssetError::Io)?;
-                        file_resolver.push((FileId::new(None, VirtualPath::new(path)), buf));
+                        file_resolver.push((
+                            FileId::new(RootedPath::new(
+                                typst::syntax::VirtualRoot::Project,
+                                vpath,
+                            )),
+                            buf,
+                        ));
                     }
                 }
             }

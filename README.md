@@ -93,6 +93,7 @@ Planned features:
 
 |`bevy_typst_textures`|Typst|Bevy||
 |-|-|-|-|
+|0.6.0|0.15|0.19|Typst update|
 |0.5.0|0.14|0.19|Bevy update[^bevy019]|
 |0.4.0|0.14|0.18|Bevy update|
 |0.3.0|0.14|0.17|Typst update|

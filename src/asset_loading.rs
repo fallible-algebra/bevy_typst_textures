@@ -3,6 +3,7 @@ use std::io::Cursor;
 use bevy_app::{App, Plugin};
 use bevy_asset::{Asset, AssetApp, AssetLoader, AsyncReadExt};
 use bevy_reflect::TypePath;
+use typst::syntax::PathError;
 
 use crate::file_resolver::{FilePreloaderError, StructuredInMemoryTemplate};
 
@@ -24,6 +25,7 @@ pub enum TypstAssetError {
     Io(std::io::Error),
     Zip(zip::result::ZipError),
     Preloader(FilePreloaderError),
+    PathError(PathError),
     UnsupportedFormat,
 }
 
@@ -39,6 +41,9 @@ impl std::fmt::Display for TypstAssetError {
                 f,
                 "TypstAssetError::UnsupportedFormat: Neither a .zip archive or a standalone .typ file"
             ),
+            TypstAssetError::PathError(path_error) => {
+                write!(f, "TypstAssetError::PathError: {path_error}")
+            }
         }
     }
 }

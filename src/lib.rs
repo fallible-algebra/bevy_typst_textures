@@ -18,8 +18,10 @@ use std::{
 use typst::{
     diag::Severity,
     foundations::{Dict, IntoValue},
-    layout::PagedDocument,
+    utils::Scalar,
 };
+use typst_layout::PagedDocument;
+use typst_render::RenderOptions;
 use wgpu_types::{Extent3d, TextureDimension, TextureFormat};
 
 use crate::{
@@ -135,7 +137,7 @@ impl TypstTextureServer {
                     .spawn(async move {
                         let compiled = engine.compile_with_input::<_, PagedDocument>(job.input);
                         let path = job.use_template.path();
-                        let Ok(page) = compiled.output else {
+                        let Ok(document) = compiled.output else {
                             bevy_log::error!(
                                 "[TYPST FATAL ERROR for {:?}] {}",
                                 path,
@@ -158,13 +160,19 @@ impl TypstTextureServer {
                                 );
                             }
                         }
+                        let page = &document.pages()[job
+                            .job_options
+                            .specific_page
+                            .map(|page_num| {
+                                (document.pages().len().saturating_sub(1)).min(page_num)
+                            })
+                            .unwrap_or(0)];
                         let rendered = typst_render::render(
-                            &page.pages[job
-                                .job_options
-                                .specific_page
-                                .map(|page_num| (page.pages.len().saturating_sub(1)).min(page_num))
-                                .unwrap_or(0)],
-                            job.job_options.pixels_per_pt,
+                            page,
+                            &RenderOptions {
+                                pixel_per_pt: Scalar::new(job.job_options.pixels_per_pt.into()),
+                                render_bleed: false,
+                            },
                         );
                         let asset_usage = job.job_options.asset_usage;
                         let sender = job.send_target.clone();

@@ -1,6 +1,5 @@
-# `bevy_typst_textures` [![Creative Bevians badge](https://raw.githubusercontent.com/CreativeBevians/badges/refs/heads/main/rendered/creative_bevians.svg)](https://creative.bevians.com)
+# `bevy_typst_textures` [![Creative Bevians badge](https://raw.githubusercontent.com/CreativeBevians/badges/refs/heads/main/rendered/creative_bevians.svg)](https://creative.bevians.com) [![](https://img.shields.io/crates/v/bevy_typst_textures)](https://crates.io/crates/bevy_typst_textures)
 
-[![](https://img.shields.io/crates/v/bevy_typst_textures)](https://crates.io/crates/bevy_typst_textures)
 [![](./screenshot.png)](./examples/default_fonts_3d.rs)
 
 A simple `Resource` for generating rasterized textures (`Handle<Image>`) out of either standalone .typ files or structured, zipped Typst projects, built on `typst-as-lib`.

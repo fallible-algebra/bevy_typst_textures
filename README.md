@@ -39,16 +39,9 @@ Standalone `.typ` files can be loaded, but they will not have access to the bevy
 
 For complex Typst projects that need access to guaranteed, specific fonts as well as other assets, you'll need to create a **`.zip`** archive containing:
 1. a **`main.typ`** file.
-2. an optional `package.toml` file:
-    - This doesn't need to be populated with anything right now.
-    - That said, it expects:
-        - a name field
-        - a list of author strings
-        - a list of bevy `asset/` folder asset requests (doesn't do anything right now)
-        - a list of Typst "universe" package requests (doesn't do anything right now)
-3. Any .otf fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)
+2. Any .otf fonts needed (they can exist anywhere, but a `fonts/` folder is a good idea)
     - unless either of the `typst-search-system-fonts` or `typst-asset-fonts` crate features are enabled, which will enable use of system fonts or the "default" Typst fonts as embedded assets, respectively. This does still put the onus on you and your users to have these fonts either installed or bundled.
-4. Typst modules, assets, images, SVGs, data, etc.
+3. Typst modules, assets, images, SVGs, data, etc.
 
 ## Limitations
 

@@ -1,6 +1,6 @@
 [package]
 name = "bevy_typst_textures"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "A simple Resource for generating rasterized textures out of either standalone .typ files or structured, zipped typst projects, built on typst-as-lib."
@@ -9,7 +9,6 @@ categories = ["game-development"]
 homepage = "https://github.com/fallible-algebra/bevy_typst_textures"
 repository = "https://github.com/fallible-algebra/bevy_typst_textures"
 readme = "README.md"
-build = "build.rs"
 authors = ["Fallible Things"]
 
 [features]
@@ -21,13 +20,13 @@ typst-asset-fonts = ["typst-as-lib/typst-kit-embed-fonts", "typst-as-lib/typst-k
 typst-search-system-fonts = ["typst-as-lib/typst-kit-fonts"]
 
 [dependencies]
-bevy_ecs = {version = "0.19"}
-bevy_asset = {version = "0.19"}
-bevy_app = {version = "0.19"}
-bevy_reflect = {version = "0.19"}
-bevy_image = {version = "0.19"}
-bevy_log = {version = "0.19"}
-bevy_tasks = {version = "0.19"}
+bevy_ecs = {version = "0.20"}
+bevy_asset = {version = "0.20"}
+bevy_app = {version = "0.20"}
+bevy_reflect = {version = "0.20"}
+bevy_image = {version = "0.20"}
+bevy_log = {version = "0.20"}
+bevy_tasks = {version = "0.20"}
 typst-as-lib = {version = "0.16"}
 # extra listings as easy reference while updating
 # typst-as-lib = {git = "https://github.com/fallible-algebra/typst-as-lib-fork"}
@@ -48,12 +47,12 @@ zip = {version = "4.2.0", default-features = false, features = [
 ]}
 toml = "0.8.19"
 uuid = { version = "1", features = ["v4"] }
-wgpu-types = "29.0"
+wgpu-types = "30.0"
 tiny-skia = "0.11"
 async-channel = "2.5"
 
 [dev-dependencies]
-bevy = {version = "0.19"}
+bevy = {version = "0.20"}
 
 # Remember to also run examples on web with `RUSTFLAGS='--cfg getrandom_backend="wasm_js"'`.
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

@@ -1,5 +1,4 @@
-# `bevy_typst_textures`
-[![](https://img.shields.io/crates/v/bevy_typst_textures
+# `bevy_typst_textures` [![Creative Bevians badge](https://raw.githubusercontent.com/CreativeBevians/badges/refs/heads/main/rendered/creative_bevians.svg)](https://creative.bevians.com) [![](https://img.shields.io/crates/v/bevy_typst_textures
 )](https://crates.io/crates/bevy_typst_textures)
 [![](./screenshot.png)](./examples/default_fonts_3d.rs)
 
@@ -93,6 +92,7 @@ Planned features:
 
 |`bevy_typst_textures`|Typst|Bevy||
 |-|-|-|-|
+|0.7.0|0.15|0.20|Bevy update|
 |0.6.0|0.15|0.19|Typst update|
 |0.5.0|0.14|0.19|Bevy update[^bevy019]|
 |0.4.0|0.14|0.18|Bevy update|
